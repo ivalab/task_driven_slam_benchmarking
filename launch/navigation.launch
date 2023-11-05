@@ -1,0 +1,24 @@
+<launch>
+
+  <arg name="vis" default="false"/>
+
+  <!-- navigation stack -->
+  <include file="$(find turtlebot_demo)/launch/turtlebot_teb_controller.launch"/>
+  
+  <!-- waypoint sender -->
+  <!-- <node name="waypoints_sender" pkg="turtlebot_roboslam" type="waypoints_sender.py"> -->
+      <!-- <param name="path_file" type="string" value="$(find turtlebot_roboslam)/config/square.txt" /> -->
+  <!-- </node> -->
+
+  <node name="odometry_converter" pkg="closedloop_nav_slam" type="odometry_converter_node">
+    <param name="source_msg_type" value="odom"/>
+    <remap from="/source_msg_topic" to="/slam/odom"/>
+  </node>
+    
+  <!-- Visualization.-->
+  <group if="$(arg vis)">
+    <node pkg="rviz" type="rviz" name="closedloop_rviz" output="screen" args="-d $(find turtlebot_roboslam)/launch/closedloop_viz.rviz">
+    </node>
+  </group>
+
+</launch>

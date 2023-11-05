@@ -1,9 +1,25 @@
 <launch>
 
-  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
+  <!-- tsrb fourth floor meta data BEGIN -->
+  <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/>
+  <arg name = "start_x" default="34"/>
+  <arg name = "start_y" default="-6"/>
+  <arg name = "start_z" default="0"/>
+  <arg name = "start_yaw" default="0"/> -->
+  <!-- tsrb fourth floor meta data END -->
+
+  <!-- classroom meta data BEGIN -->
+  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/classroom_textured_collid.world"/>
+  <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/classroom/classroom_textured.yaml"/>
+  <arg name = "start_x" default="9"/>
+  <arg name = "start_y" default="-5"/>
+  <arg name = "start_z" default="0"/>
+  <arg name = "start_yaw" default="3.14159265359"/>
+  <!-- classroom meta data END -->
+
   <arg name="gui" default="true"/>
-  <arg name="mode" default="localization"/>
+  <!-- <arg name="mode" default="localization"/> -->
 
 
   <!--BEGIN turtlebot_gazebo turtlebot_world.launch -->
@@ -61,7 +77,7 @@
       
       <!-- Gazebo model spawner  -->
       <node name="spawn_turtlebot_model" pkg="gazebo_ros" type="spawn_model"
-            args="-x 34 -y -6 -z 0 -Y 0 -unpause -urdf -param robot_description -model mobile_base"/>
+            args="-x $(arg start_x) -y $(arg start_y) -z $(arg start_z) -Y $(arg start_yaw) -unpause -urdf -param robot_description -model mobile_base"/>
             
       <!-- Velocity muxer -->
       <node pkg="nodelet" type="nodelet" name="mobile_base_nodelet_manager" args="manager"  required="true"/>
@@ -84,19 +100,12 @@
     
 
   <!--END turtlebot_gazebo turtlebot_world.launch -->
-  <group if="$(eval arg('mode') == 'mapping')">
-    <node name="map" pkg="map_server" type="map_server" args="$(arg map_file)" required="true">
-    </node>
+  <node name="map" pkg="map_server" type="map_server" args="$(arg map_file)" required="true">
+  </node>
 
-    <node name="map_odom_publisher" pkg="gazebo_fake_localization" type="gazebo_fake_localization" required="true" launch-prefix="">
-      <param name="odom_frame_id" value="odom"/>
-    </node>
-  </group>
-
-  <group if="$(eval arg('mode') == 'localization')">
-    <node name="map" pkg="map_server" type="map_server" args="$(arg map_file)" required="true">
-    </node>
-  </group>
+  <node name="map_odom_publisher" pkg="gazebo_fake_localization" type="gazebo_fake_localization" required="true" launch-prefix="">
+    <param name="odom_frame_id" value="odom"/>
+  </node>
 
 <!-- downsample the imu message in gazebo; no need in real turtlebot; there might be warning on msf_core: imu message drop: simply ignore that! -->
 <node pkg="topic_tools" type="throttle" name="imu_downsample" args=" messages /mobile_base/sensors/imu_data 100 /imu0">
