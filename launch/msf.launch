@@ -1,0 +1,33 @@
+<launch>
+
+    <arg name="imu_type" default="mpu6000"/>
+    <arg name="slam_sensor_type" default="laser"/> <!-- stereo, laser -->
+    <arg name="slam_pose_topic" default="/slam/pose"/>
+ 
+    <param name="/use_sim_time" value="true" />
+
+    <!-- call msf for visual-inertial state estimation -->
+    <node name="msf_pose_sensor" pkg="msf_updates" type="pose_sensor" clear_params="true" output="screen">
+        <remap from="msf_core/imu_state_input" to="/imu0" />
+        <remap from="msf_updates/pose_with_covariance_input" to="$(arg slam_pose_topic)" />
+        <rosparam file="$(find msf_updates)/gazebo_$(arg slam_sensor_type)_$(arg imu_type)_fix.yaml"/>
+        <!-- <remap from="/msf_core/odometry" to="/odom" /> -->
+    </node>
+
+    <!-- convert msf output to odom message -->
+    <node name="odometry_converter" pkg="closedloop_nav_slam" type="odometry_converter_node">
+        <param name="source_msg_type" value="odom"/>
+        <remap from="/source_msg_topic" to="/msf_core/odometry"/>
+        <param name="source_frame" value="gyro_link"/>
+        <param name="target_frame" value="base_footprint"/>
+    </node>
+
+    <node name="visual_robot_publisher" type="robot_state_publisher" pkg="robot_state_publisher">
+        <param name="tf_prefix" value="visual"/>
+    </node>
+
+    <!-- initialize msf -->
+    <node pkg="rosservice" type="rosservice" name="initialize" args="call --wait /msf_pose_sensor/pose_sensor/initialize_msf_scale 1"/>
+
+</launch>
+  

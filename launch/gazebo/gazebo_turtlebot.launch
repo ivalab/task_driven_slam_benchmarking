@@ -1,21 +1,21 @@
 <launch>
 
   <!-- tsrb fourth floor meta data BEGIN -->
-  <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
+  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/>
   <arg name = "start_x" default="34"/>
   <arg name = "start_y" default="-6"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="0"/> -->
+  <arg name = "start_yaw" default="0"/>
   <!-- tsrb fourth floor meta data END -->
 
   <!-- classroom meta data BEGIN -->
-  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/classroom_textured_collid.world"/>
+  <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/classroom_textured_collid.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/classroom/classroom_textured.yaml"/>
   <arg name = "start_x" default="9"/>
   <arg name = "start_y" default="-5"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="3.14159265359"/>
+  <arg name = "start_yaw" default="3.14159265359"/> -->
   <!-- classroom meta data END -->
 
   <arg name="gui" default="true"/>

@@ -1,0 +1,16 @@
+<launch>
+
+    <param name="/use_sim_time" value="true" />
+
+    <!-- convert perfect odom to target odom message -->
+    <node name="odometry_converter" pkg="closedloop_nav_slam" type="odometry_converter_node">
+        <param name="source_msg_type" value="odom"/>
+        <remap from="/source_msg_topic" to="/odom_sparse"/>
+    </node>
+
+    <node name="visual_robot_publisher" type="robot_state_publisher" pkg="robot_state_publisher">
+        <param name="tf_prefix" value="visual"/>
+    </node>
+
+</launch>
+  
