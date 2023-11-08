@@ -1,0 +1,313 @@
+#!/usr/bin/env python
+# -*-coding:utf-8 -*-
+'''
+@file nav_slam_test.py
+@author Yanwei Du (yanwei.du@gatech.edu)
+@date 11-07-2023
+@version 1.0
+@license Copyright (c) 2023
+@desc None
+'''
+
+
+"""
+Functions
+1. Send waypoints.
+2. Check failures, bumping or wheel drop.
+3. Reset gazebo model, turtlebot pose.
+4. Reset odometry.
+5. Reset costmap.
+6. Reset slam_toolbox.
+"""
+
+import argparse
+import os
+from pathlib import Path
+import sys
+
+import actionlib
+import move_base_msgs.msg as move_base_msgs
+import numpy as np
+import rospkg
+import rospy
+import std_msgs.msg as std_msgs
+import std_srvs.srv as std_srvs
+from actionlib_msgs.msg import GoalStatus
+from gazebo_msgs.msg import ModelState, ModelStates
+from gazebo_msgs.srv import SetModelState
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
+from kobuki_msgs.msg import BumperEvent, ButtonEvent, WheelDropEvent
+from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path as PathMsg
+from std_msgs.msg import Header
+
+
+class NavSlamTest:
+    def __init__(
+        self,
+        args
+    ):
+
+        # Init ROS.
+        rospy.init_node("waypoints_navigator", anonymous=True)
+
+        # Init ros pack.
+        self._rospack = rospkg.RosPack()
+        self._pkg_dir = Path(self._rospack.get_path("closedloop_nav_slam"))
+        self._wpts_prefix = self._pkg_dir / "configs/path" / args.env
+
+        # Extract args values.
+        self._robot_init_pose = args.robot_init_pose
+        self._trials = args.trials
+        self._reset = args.reset
+        self._idle_time = args.idle_time
+
+        # ROS subscribers.
+        rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.__buttonEventCallback)
+        rospy.Subscriber("/mobile_base/events/wheel_drop", WheelDropEvent, self.__wheelDropEventCallback)
+        rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.__bumperEventCallback)
+        rospy.Subscriber("/gt_odom", Odometry, self.__groundTruthOdometryCallback)
+        rospy.Subscriber("/et_odom", Odometry, self.__estimatedOdometryCallback)
+        rospy.Subscriber("/gt_pose", PoseWithCovarianceStamped, self.__groundTruthPoseCallback)
+        rospy.Subscriber("/et_pose", PoseWithCovarianceStamped, self.__estimatedPoseCallback)
+
+        # ROS publisher.
+        self._odom_reset_pub = rospy.Publisher(
+            "/mobile_base/commands/reset_odometry", std_msgs.Empty, queue_size=1, latch=True
+        )
+        self._init_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
+        self._nav_path_pub = rospy.Publisher("/planned_path", PathMsg, queue_size=1)
+
+        # ROS service.
+        self._clear_costmap_srv = None
+        self._reset_robot_model_state_srv = None
+        self._reset_slam_toolbox_srv = None
+
+        # Other parameters.
+        self._stop = False
+        self._goal_generator = None
+        self._button_pressed = False
+        self._planned_path = None
+        self._gt_odom = None
+
+        # Setup goals.
+        self.__setupGoals(args.path_file)
+
+        # Reset a few.
+        self.__resetRobotModelState()
+        self.__resetOdom()
+
+        # Hook-up with move_base
+        self._client = actionlib.SimpleActionClient("move_base", move_base_msgs.MoveBaseAction)
+        rospy.loginfo("Waiting for server ...")
+        self._client.wait_for_server()
+        rospy.loginfo("Done!")
+
+        # Start navigation.
+        self.__navigate()
+
+        rospy.spin()
+
+    def __buttonEventCallback(self, msg):
+        if msg.state == ButtonEvent.PRESSED and msg.button == ButtonEvent.Button1:
+            rospy.loginfo("Reset request received.")
+            self._stop = True
+            self.__reset()
+        elif msg.state == ButtonEvent.PRESSED and msg.button == ButtonEvent.Button0:
+            rospy.loginfo("Trigger the robot to move.")
+            self._stop = False
+            self._button_pressed = True
+
+    def __wheelDropEventCallback(self, msg):
+        if msg.state == WheelDropEvent.DROPPED:
+            rospy.loginfo("Stop request received.")
+            self._stop = True
+            self._client.cancel_all_goals()
+
+    def __bumperEventCallback(self, msg):
+        rospy.loginfo("Bumper triggered.")
+        self._stop = True
+        self._client.cancel_all_goals()
+
+    def __groundTruthOdometryCallback(self, msg):
+        self._gt_odom = msg
+
+    def __estimatedOdometryCallback(self, msg):
+        pass
+
+    def __groundTruthPoseCallback(self, msg):
+        pass
+
+    def __estimatedPoseCallback(self, msg):
+        pass
+
+    def __setupGoals(self, path_file):
+        goal_list = self.__readGoals(path_file)
+        self._goals = []
+        self._planned_path = PathMsg(header=Header(frame_id="/planned"))
+        for p in goal_list:
+            goal = Pose()
+            goal.position.x = p[0]
+            goal.position.y = p[1]
+            goal.orientation.w = np.cos(p[2] / 2.0)
+            goal.orientation.z = np.sin(p[2] / 2.0)
+            self._goals.append(goal)
+            self._planned_path.poses.append(PoseStamped(pose=goal))
+        self._nav_path_pub.publish(self._planned_path)
+
+    def __readGoals(self, path_file):
+        waypoints = np.loadtxt(self._wpts_prefix / "waypoints.txt")
+        path = np.loadtxt(self._wpts_prefix / path_file, dtype=int)
+        xys = waypoints[path, 1:]
+        goals = []  # [[xys[0, 0] - offset[0], xys[0, 1] - offset[1], 0.0]]
+        for i in range(1, len(xys)):  # skip start pos
+            p0 = xys[i - 1, :]
+            p1 = xys[i, :]
+            if i + 1 < len(xys):
+                p2 = xys[i + 1, :]
+            theta = np.arctan2(p2[1] - p0[1], p2[0] - p0[0])
+            goals.append([xys[i, 0], xys[i, 1], theta])
+        return goals
+
+    def __navigate(self):
+        while not rospy.is_shutdown():
+            if not self._stop and self._button_pressed:
+                try:
+                    self._planned_path = PathMsg(header=Header(frame_id="/actual"))
+                    success = True
+                    for trial_count in range(self._trials):
+                        rospy.loginfo(f"----- Trial: {trial_count} -----")
+                        for goal in self._goals:
+                            rospy.loginfo(f"goal: \n {goal}")
+                            success = self.__navigateToGoal(goal_pose=goal)
+                            if not success:
+                                rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
+                                break
+                            rospy.sleep(self._idle_time)
+                            self._planned_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
+                        if not success:
+                            break
+                        rospy.loginfo(f"Sequencing finished: {trial_count}.")
+                    rospy.loginfo("Publish planned path with timestamp.")
+                    self._nav_path_pub.publish(self._planned_path)
+                    rospy.loginfo("Done.")
+                    self._stop = True
+                    self._button_pressed = False
+                    self._client.cancel_all_goals()
+                except Exception as e:
+                    rospy.loginfo(e)
+                    pass
+                    rospy.sleep(0.1)
+            else:
+                rospy.sleep(0.2)
+
+    def __navigateToGoal(self, goal_pose):
+        # Create the goal point
+        goal = move_base_msgs.MoveBaseGoal()
+        goal.target_pose.pose = goal_pose
+        goal.target_pose.header.stamp = rospy.Time.now()
+        goal.target_pose.header.frame_id = "map"
+
+        # Send the goal!
+        rospy.loginfo("Sending goal.")
+        self._client.send_goal(goal)
+        rospy.loginfo("Waiting for result ...")
+
+        r = rospy.Rate(5)
+
+        # start_time = rospy.Time.now()
+
+        keep_waiting = True
+        while keep_waiting and not rospy.is_shutdown():
+            state = self._client.get_state()
+            # print "State: " + str(state)
+            if state is not GoalStatus.ACTIVE and state is not GoalStatus.PENDING:
+                keep_waiting = False
+            else:
+                r.sleep()
+
+        state = self._client.get_state()
+        return state == GoalStatus.SUCCEEDED
+
+    def __getNextGoal(self):
+        for goal in self._goals:
+            rospy.loginfo(goal)
+            yield goal
+
+    def __reset(self):
+        self.__resetGoals()
+        rospy.sleep(0.2)
+        self.__resetRobotModelState()
+        rospy.sleep(0.2)
+        self.__resetCostmaps()
+        rospy.sleep(0.2)
+        self.__resetOdom()
+        rospy.sleep(0.2)
+        # self.__resetSlamToolbox()
+        # rospy.sleep(0.2)
+
+    def __resetCostmaps(self):
+        rospy.loginfo("Reset costmaps ...")
+        if self._clear_costmap_srv is None:
+            rospy.wait_for_service("/move_base/clear_costmaps")
+            self._clear_costmap_srv = rospy.ServiceProxy("/move_base/clear_costmaps", std_srvs.Empty)
+        self._clear_costmap_srv()
+        rospy.loginfo("Done.")
+
+    def __resetOdom(self):
+        rospy.loginfo("Reset odom ...")
+        self._odom_reset_pub.publish(std_msgs.Empty())
+        rospy.loginfo("Done.")
+
+    def __resetGoals(self):
+        rospy.loginfo("Reset goals ... ")
+        self._client.cancel_all_goals()
+        self._goal_generator = self.__getNextGoal()
+        rospy.loginfo("Done.")
+
+    def __resetRobotModelState(self):
+        rospy.loginfo("Reset robot model state in gazebo ... ")
+        if self._reset_robot_model_state_srv is None:
+            rospy.wait_for_service("/gazebo/set_model_state")
+            self._reset_robot_model_state_srv = rospy.ServiceProxy("/gazebo/set_model_state", SetModelState)
+        pose = Pose()
+        pose.position.x = self._robot_init_pose[0]
+        pose.position.y = self._robot_init_pose[1]
+        pose.orientation.w = np.cos(np.deg2rad(self._robot_init_pose[2]) / 2.0)
+        pose.orientation.z = np.sin(np.deg2rad(self._robot_init_pose[2]) / 2.0)
+        state = ModelState(model_name="mobile_base", pose=pose)
+        response = self._reset_robot_model_state_srv(state)
+        assert response
+        rospy.loginfo("Done.")
+
+    def __resetSlamToolbox(self):
+        rospy.loginfo("Reset slam ... ")
+        if self._reset_slam_toolbox_srv is None:
+            rospy.wait_for_service("/slam_toolbox/clear_localization_buffer")
+            self._reset_slam_toolbox_srv = rospy.ServiceProxy("/slam_toolbox/clear_localization_buffer", std_srvs.Empty)
+        self._reset_slam_toolbox_srv()
+
+        init_pose = PoseWithCovarianceStamped()
+        self._init_pose_pub.publish(init_pose)
+        rospy.loginfo("Done.")
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    # parser.add_argument("--mode", dest="mode", default="localization", help="mode: localization|mapping")
+    parser.add_argument("--env", dest="env", default="tsrb", help="environment (tsrb | classroom)")
+    parser.add_argument("--path_file", dest="path_file", default="path0.txt", help="path")
+    parser.add_argument("--trials", default="1", type=int, help="number of trials (repeatability)")
+    parser.add_argument('--reset', default=False, action='store_true')
+    parser.add_argument('--robot_init_pose', nargs=3, default=[34.0, -6.0, 0.0], help='robot init pose: [x, y, theta]', type=float)
+    parser.add_argument("--idle_time", default="1.0", type=float, help="idle time in seconds at each waypoint")
+
+    args, unknown = parser.parse_known_args()
+
+    print(args)
+
+    try:
+        nst = NavSlamTest(args)
+    except rospy.ROSInterruptException:
+        rospy.loginfo("exception caught !!!")
