@@ -58,9 +58,10 @@ class NavSlamTest:
 
         # Extract args values.
         self._robot_init_pose = args.robot_init_pose
-        self._trials = args.trials
+        self._loops = args.loops
         self._reset = args.reset
         self._idle_time = args.idle_time
+        self._output_dir = args.output_dir
 
         # ROS subscribers.
         rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.__buttonEventCallback)
@@ -85,10 +86,17 @@ class NavSlamTest:
 
         # Other parameters.
         self._stop = False
+        self._task_failed = False
         self._goal_generator = None
         self._button_pressed = False
         self._planned_path = None
         self._gt_odom = None
+        self._gt_odoms = []
+        self._et_odoms = []
+        self._gt_poses = []
+        self._et_poses = []
+        self._odom_file_header = "timestamp tx ty tz qx qy qz qw vx vy vz wx wy wz"
+        self._pose_file_header = "timestamp tx ty tz qx qy qz qw"
 
         # Setup goals.
         self.__setupGoals(args.path_file)
@@ -106,7 +114,8 @@ class NavSlamTest:
         # Start navigation.
         self.__navigate()
 
-        rospy.spin()
+        # rospy.spin()
+        self.saveToFile()
 
     def __buttonEventCallback(self, msg):
         if msg.state == ButtonEvent.PRESSED and msg.button == ButtonEvent.Button1:
@@ -128,18 +137,20 @@ class NavSlamTest:
         rospy.loginfo("Bumper triggered.")
         self._stop = True
         self._client.cancel_all_goals()
+        self._task_failed = True
 
     def __groundTruthOdometryCallback(self, msg):
         self._gt_odom = msg
+        self._gt_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __estimatedOdometryCallback(self, msg):
-        pass
+        self._et_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __groundTruthPoseCallback(self, msg):
-        pass
+        self._gt_poses.append(self.__convertStampedPoseMsgToArray(msg))
 
     def __estimatedPoseCallback(self, msg):
-        pass
+        self._et_poses.append(self.__convertStampedPoseMsgToArray(msg))
 
     def __setupGoals(self, path_file):
         goal_list = self.__readGoals(path_file)
@@ -171,35 +182,34 @@ class NavSlamTest:
 
     def __navigate(self):
         while not rospy.is_shutdown():
-            if not self._stop and self._button_pressed:
-                try:
-                    self._planned_path = PathMsg(header=Header(frame_id="/actual"))
-                    success = True
-                    for trial_count in range(self._trials):
-                        rospy.loginfo(f"----- Trial: {trial_count} -----")
-                        for goal in self._goals:
-                            rospy.loginfo(f"goal: \n {goal}")
-                            success = self.__navigateToGoal(goal_pose=goal)
-                            if not success:
-                                rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
-                                break
-                            rospy.sleep(self._idle_time)
-                            self._planned_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
-                        if not success:
-                            break
-                        rospy.loginfo(f"Sequencing finished: {trial_count}.")
-                    rospy.loginfo("Publish planned path with timestamp.")
-                    self._nav_path_pub.publish(self._planned_path)
-                    rospy.loginfo("Done.")
-                    self._stop = True
-                    self._button_pressed = False
-                    self._client.cancel_all_goals()
-                except Exception as e:
-                    rospy.loginfo(e)
-                    pass
-                    rospy.sleep(0.1)
-            else:
+            if self._stop or not self._button_pressed:
                 rospy.sleep(0.2)
+                continue
+            try:
+                self._planned_path = PathMsg(header=Header(frame_id="/actual"))
+                success = True
+                for loop_count in range(self._loops):
+                    rospy.loginfo(f"----- Loop: {loop_count} -----")
+                    for goal in self._goals:
+                        rospy.loginfo(f"goal: \n {goal}")
+                        success = self.__navigateToGoal(goal_pose=goal)
+                        if not success:
+                            rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
+                            break
+                        rospy.sleep(self._idle_time)
+                        self._planned_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
+                    if not success:
+                        break
+                    rospy.loginfo(f"Sequencing finished: {loop_count}.")
+                rospy.loginfo("Publish planned path with timestamp.")
+                self._nav_path_pub.publish(self._planned_path)
+                rospy.loginfo("Done.")
+                self._stop = True
+                self._button_pressed = False
+                self._client.cancel_all_goals()
+            except Exception as e:
+                rospy.loginfo(e)
+            break
 
     def __navigateToGoal(self, goal_pose):
         # Create the goal point
@@ -292,16 +302,85 @@ class NavSlamTest:
         rospy.loginfo("Done.")
 
 
+    def __convertNavOdomMsgToArray(self, msg) -> list:
+        return [
+                msg.header.stamp.to_sec(),
+                msg.pose.pose.position.x,
+                msg.pose.pose.position.y,
+                msg.pose.pose.position.z,
+                msg.pose.pose.orientation.x,
+                msg.pose.pose.orientation.y,
+                msg.pose.pose.orientation.z,
+                msg.pose.pose.orientation.w,
+                msg.twist.twist.linear.x,
+                msg.twist.twist.linear.y,
+                msg.twist.twist.linear.z,
+                msg.twist.twist.angular.x,
+                msg.twist.twist.angular.y,
+                msg.twist.twist.angular.z,
+        ]
+
+    def __convertStampedPoseMsgToArray(self, msg) -> list:
+        return [
+                msg.header.stamp.to_sec(),
+                msg.pose.pose.position.x,
+                msg.pose.pose.position.y,
+                msg.pose.pose.position.z,
+                msg.pose.pose.orientation.x,
+                msg.pose.pose.orientation.y,
+                msg.pose.pose.orientation.z,
+                msg.pose.pose.orientation.w,
+        ]
+
+    def __convertPathMsgToArray(self, msg) -> list:
+        stamped_wpts = []
+        for p in self._planned_path.poses:
+            stamped_wpts.append([
+                p.header.stamp.to_sec(),
+                p.pose.position.x,
+                p.pose.position.y,
+                2.0 * np.arccos(p.pose.orientation.w)
+            ])
+        return stamped_wpts
+
+    def saveToFile(self):
+        if "" == self._output_dir:
+            rospy.logwarn("No directory is specified, save nothing!")
+            return
+        
+        # Start saving.
+        prefix_path = Path(self._output_dir)
+        if len(self._gt_poses) > 0:
+            np.savetxt(prefix_path / "lidar_poses.txt", self._gt_poses, fmt="%.6f", header=self._pose_file_header)
+            rospy.loginfo("Saved gt poses.")
+        if len(self._et_poses) > 0:
+            np.savetxt(prefix_path / "visual_poses.txt", self._et_poses, fmt="%.6f", header=self._pose_file_header)
+            rospy.loginfo("Saved et poses.")
+        if len(self._gt_odoms) > 0:
+            np.savetxt(prefix_path / "gt_odoms.txt", self._gt_odoms, fmt="%.6f", header=self._odom_file_header)
+            np.savetxt(prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=self._pose_file_header)
+            rospy.loginfo("Saved gt odoms.")
+        if len(self._et_odoms) > 0:
+            np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=self._odom_file_header)
+            np.savetxt(prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=self._pose_file_header)
+            rospy.loginfo("Saved et odoms.")
+        stamped_wpts = self.__convertPathMsgToArray(self._planned_path)
+        if len(stamped_wpts) > 0:
+            np.savetxt(prefix_path / "actual_path.txt", stamped_wpts, fmt="%.6f", header="timestamp x y theta")
+            rospy.loginfo("Saved actual path.")
+        rospy.loginfo("Saving Done!")
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     # parser.add_argument("--mode", dest="mode", default="localization", help="mode: localization|mapping")
     parser.add_argument("--env", dest="env", default="tsrb", help="environment (tsrb | classroom)")
     parser.add_argument("--path_file", dest="path_file", default="path0.txt", help="path")
-    parser.add_argument("--trials", default="1", type=int, help="number of trials (repeatability)")
+    parser.add_argument("--loops", default="1", type=int, help="number of loops (repeatability)")
     parser.add_argument('--reset', default=False, action='store_true')
     parser.add_argument('--robot_init_pose', nargs=3, default=[34.0, -6.0, 0.0], help='robot init pose: [x, y, theta]', type=float)
     parser.add_argument("--idle_time", default="1.0", type=float, help="idle time in seconds at each waypoint")
+    parser.add_argument("--output_dir", default="",type=str, help="directory to save stats data" )
 
     args, unknown = parser.parse_known_args()
 
