@@ -14,7 +14,16 @@ from pathlib import Path
 import subprocess
 import time
 import numpy as np
+from nav_msgs.msg import Path as PathMsg
 
+import yaml
+
+import rospy
+
+from modular.node_module import MoveBaseNode, WaypointsNavigatorNode
+from modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
+
+CONFIG_PREFIX = Path(__file__).parent.resolve()
 
 class bcolors:
     HEADER = "\033[95m"
@@ -25,137 +34,119 @@ class bcolors:
     ENDC = "\033[0m"
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
+class CentralManager:
 
+    def __init__(self, config_file: str):
 
-# Logging parameters.
-RESULT_DIR = Path("/mnt/DATA/rosbags/cl_nav_slam_test/slam_toolbox")
-RESULT_DIR.mkdir(exist_ok=True)
+        # Load yaml.
+        self._params = None
+        with open(config_file, "r") as file:
+            self._params = yaml.safe_load(file)
+        assert self._params
 
-# Testing parameters.
-env = "tsrb"
-robot_init_pose = {
-    "tsrb": "34.0 -6.0 0.0",
-}
-path_files = ["path0"]
-trials = 1
+        # Create result dir.
+        Path(self._params["result_dir"]).mkdir(parents=True, exist_ok=True)
 
-# Utility function to estimate the navigation duration.
-def estimate_duration(pfile: str) -> float:
-    PATH_DIR = "/home/yanwei/turtlebot_ws/src/closedloop_nav_slam/configs/path/" + env
-    vertices = np.loadtxt(os.path.join(PATH_DIR, "waypoints.txt"))
-    path = np.loadtxt(os.path.join(PATH_DIR, pfile + ".txt"), dtype=int)
+        # Ros node.
+        rospy.init_node("onekey_node", anonymous=True)
+        # We used this message signal to determine if a path has been completed.
+        self._sub = rospy.Subscriber("/planned_path", PathMsg, self.__path_callback)
+        self._stop = False
 
-    xyz = vertices[path, 1:]
-    xyz_diff = np.diff(xyz, axis=0)
-    traj_length = np.sum(np.linalg.norm(xyz_diff, axis=1))
-    speed = 0.3
-    return traj_length / speed + path.shape[0] * 5.0
+    def __path_callback(self, msg):
+        rospy.loginfo("Task completion message received!")
+        self._stop = True
 
+    def run(self):
 
-for pfile in path_files:
-    print(f"Navigate path file: {pfile} ... ")
+        for pfile in self._params["path_files"]:
+            print(f"Navigate path file: {pfile} ... ")
 
-    for trial in range(trials):
+            for trial in range(self._params["trials"]):
 
-        print(f"Trial: {trial}")
+                print(f"Trial: {trial}")
 
-        path_dir = RESULT_DIR / pfile / ("trial" + str(trial))
-        path_dir.mkdir(exist_ok=True)
+                path_dir = Path(self._params["result_dir"]) / pfile / ("trial" + str(trial))
+                path_dir.mkdir(parents=True, exist_ok=True)
 
-        # Assuming gazebo is already started in a separated window.
+                # - Assuming gazebo is already started in a separated window.
 
-        # 1. Start waypoint navigator.
-        print("Start waypoint navigator ...")
-        cmd_cl_test = (
-            "roslaunch closedloop_nav_slam waypoints_navigator.launch" + " env:=" + env
-            + " path_file:=" + pfile + ".txt"
-            + " trials:=" + str(trials)
-            + " output_dir:=" + str(path_dir)
-        )
-        print(cmd_cl_test)
-        subprocess.Popen(cmd_cl_test, shell=True)
-        time.sleep(5.0)
+                # = Start waypoint navigator.
+                print("Start waypoints navigator ...")
+                wpt_nav_node = WaypointsNavigatorNode(self._params, pfile, str(path_dir))
+                wpt_nav_node.start()
+                time.sleep(5.0)
 
-        # 2. Reset everything.
-        print("Reset everything ...")
-        cmd_reset_robot = "rostopic pub -1 /mobile_base/events/button kobuki_msgs/ButtonEvent '{button: 1, state: 1}'"
-        print(cmd_reset_robot)
-        subprocess.Popen(cmd_reset_robot, shell=True)
-        time.sleep(10.0)
+                # - Reset everything.
+                print("Reset everything ...")
+                robot_bash_cmd = "bash " + str(CONFIG_PREFIX) + "/utils/start_robot.sh"
+                cmd_reset_robot = robot_bash_cmd + " 1 1" # BUTTON STATE
+                subprocess.Popen(cmd_reset_robot, shell=True)
+                time.sleep(10.0)
 
-        # 3. Start slam
-        print("Start SLAM ...")
-        # cmd_slam = "roslaunch hector_mapping closedloop_nav_test.launch"
-        cmd_slam = "roslaunch slam_toolbox nav_slam_test.launch mode:=mapping"
-        # cmd_slam = "bash closedloop/call_dsol.sh"
-        # cmd_slam = "bash closedloop/call_gfgg.sh"
-        print(cmd_slam)
-        subprocess.Popen(cmd_slam, shell=True)
-        time.sleep(5.0)
+                # - Start slam
+                print("Start SLAM ...")
+                slam_node = CreateSlamNode(self._params)
+                slam_node.start()
+                time.sleep(5.0)
 
-        # 3. Start msf
-        print("Start MSF ...")
-        cmd_msf = "roslaunch closedloop_nav_slam msf.launch"
-        print(cmd_msf)
-        subprocess.Popen(cmd_msf, shell=True)
-        time.sleep(10.0)
+                # - Start msf
+                msf_node = None
+                if self._params["enable_msf"]:
+                    print("Start MSF ...")
+                    msf_node = MsfNode(self._params)
+                    msf_node.start()
+                    time.sleep(10.0)
 
-        # 4. Start move_base
-        print("Start move_base ...")
-        cmd_nav = "roslaunch closedloop_nav_slam move_base.launch vis:=true"
-        print(cmd_nav)
-        subprocess.Popen(cmd_nav, shell=True)
-        time.sleep(5.0)
+                # - Start move_base
+                print("Start move_base ...")
+                mb_node = MoveBaseNode(self._params)
+                mb_node.start()
+                time.sleep(5.0)
 
-        # 5. Start rosbag logging.
-        # path_data_logging = RESULT_DIR / ("turtlebot_" + pfile)  # + "_round" + str(round_index))
-        # cmd_rosbag = (
-        #     "roslaunch turtlebot_roboslam data_logging.launch topics:='/odom_sparse /scanmatch/pose /planned_path /gfgg/pose' path_data_logging:="
-        #     + str(path_data_logging)
-        # )
-        # print("Start rosbag logging ...")
-        # print(cmd_rosbag)
-        # subprocess.Popen(cmd_rosbag, shell=True)
-        # time.sleep(5.0)
+                # - Start robot
+                print("Start the robot ...")
+                cmd_start_robot = robot_bash_cmd + " 0 1" # BUTTON STATE
+                subprocess.Popen(cmd_start_robot, shell=True)
 
-        # 6. Start robot
-        print("Start the robot ...")
-        cmd_start_robot = "rostopic pub -1 /mobile_base/events/button kobuki_msgs/ButtonEvent '{button: 0, state: 1}'"
-        print(cmd_start_robot)
-        subprocess.Popen(cmd_start_robot, shell=True)
+                # Wait for the test to finish.
+                rate = rospy.Rate(5.0)
+                self._stop = False
+                while not rospy.is_shutdown():
+                    if self._stop:
+                        break
+                    rate.sleep()
 
-        # 7. Idle to wait for the process.
-        # (yanwei) Compute a reasonable waiting length or monitor a success signal.
-        duration = estimate_duration(pfile)
-        print(f"Idle for {duration:.2f} seconds ...")
-        time.sleep(duration)
+                if not self._stop:
+                    rospy.loginfo("Stop requested by user.")
 
-        # # Killing rosbag
-        # cmd_kill_rosbag = "rosnode kill /data_logging"
-        # print("Killing rosbag ...")
-        # print(cmd_kill_rosbag)
-        # subprocess.call(cmd_kill_rosbag, shell=True)
-        # time.sleep(5)
+                ## Stop nodes.
 
-        # Killing SLAM
-        print("Killing SLAM ...")
-        # subprocess.call("rosnode kill /dsol_odom", shell=True)
-        subprocess.call("rosnode kill /slam_toolbox", shell=True)
-        subprocess.call("rosnode kill /msf_pose_sensor", shell=True)
-        subprocess.call("rosnode kill /odometry_converter", shell=True)
-        subprocess.call("rosnode kill /visual_robot_publisher", shell=True)
-        # subprocess.call("rosnode kill /map", shell=True)
-        # subprocess.call("rosnode kill /map_nav_broadcaster", shell=True)
-        time.sleep(5)
+                # - Stop navigation script
+                print("Killing waypoints_navigator ...")
+                wpt_nav_node.stop()
+                time.sleep(5)
 
-        # Killing Navigation
-        print("Killing move_base ...")
-        subprocess.call("rosnode kill  /move_base", shell=True)
-        subprocess.call("rosnode kill  /navigation_velocity_smoother", shell=True)
-        time.sleep(5)
+                # - Stop move_base
+                print("Killing move_base ...")
+                mb_node.stop()
+                time.sleep(5)
 
-        # Killing navigation script
-        print("Killing waypoints_navigator ...")
-        subprocess.call("rosnode kill /waypoints_navigator", shell=True)
-        print(f"Done {pfile}")
-        time.sleep(15)
+                # - Killing SLAM
+                print("Killing SLAM ...")
+                if msf_node:
+                    msf_node.stop()
+                    time.sleep(5)
+
+                slam_node.stop()
+                time.sleep(5)
+
+                print(f"Done {pfile}")
+
+if __name__ == "__main__":
+
+    try:
+        cm = CentralManager(CONFIG_PREFIX / "config.yml")
+        cm.run()
+    except rospy.ROSInterruptException:
+        rospy.loginfo("CM exception caught !!!")

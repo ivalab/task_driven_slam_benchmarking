@@ -34,3 +34,22 @@
     local-name: yocs/yujin_ocs
     uri: https://github.com/ivaros/yujin_ocs.git
     version: noetic
+
+# Core Sensor Fusion repos
+
+- git:
+    local-name: ethzasl_msf
+    uri: 'https://github.com/ivalab/ethzasl_msf.git'
+    version: master
+- git:
+    local-name: gflags_catkin
+    uri: 'https://github.com/ethz-asl/gflags_catkin.git'
+    version: master
+- git:
+    local-name: glog_catkin
+    uri: 'https://github.com/ethz-asl/glog_catkin.git'
+    version: master
+- git:
+    local-name: catkin_simple
+    uri: 'https://github.com/catkin/catkin_simple.git'
+    version: master

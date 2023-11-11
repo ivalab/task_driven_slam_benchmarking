@@ -49,7 +49,7 @@ class NavSlamTest:
     ):
 
         # Init ROS.
-        rospy.init_node("waypoints_navigator", anonymous=True)
+        rospy.init_node("waypoints_navigator", anonymous=True, disable_signals=True)
 
         # Init ros pack.
         self._rospack = rospkg.RosPack()
@@ -62,6 +62,18 @@ class NavSlamTest:
         self._reset = args.reset
         self._idle_time = args.idle_time
         self._output_dir = args.output_dir
+
+        # Other parameters.
+        self._stop = False
+        self._task_failed = False
+        self._goal_generator = None
+        self._button_pressed = False
+        self._planned_path = None
+        self._gt_odom = None
+        self._gt_odoms = []
+        self._et_odoms = []
+        self._gt_poses = []
+        self._et_poses = []
 
         # ROS subscribers.
         rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.__buttonEventCallback)
@@ -84,20 +96,6 @@ class NavSlamTest:
         self._reset_robot_model_state_srv = None
         self._reset_slam_toolbox_srv = None
 
-        # Other parameters.
-        self._stop = False
-        self._task_failed = False
-        self._goal_generator = None
-        self._button_pressed = False
-        self._planned_path = None
-        self._gt_odom = None
-        self._gt_odoms = []
-        self._et_odoms = []
-        self._gt_poses = []
-        self._et_poses = []
-        self._odom_file_header = "timestamp tx ty tz qx qy qz qw vx vy vz wx wy wz"
-        self._pose_file_header = "timestamp tx ty tz qx qy qz qw"
-
         # Setup goals.
         self.__setupGoals(args.path_file)
 
@@ -109,12 +107,13 @@ class NavSlamTest:
         self._client = actionlib.SimpleActionClient("move_base", move_base_msgs.MoveBaseAction)
         rospy.loginfo("Waiting for server ...")
         self._client.wait_for_server()
-        rospy.loginfo("Done!")
+        rospy.loginfo("Done (action server)!")
 
         # Start navigation.
         self.__navigate()
 
         # rospy.spin()
+
         self.saveToFile()
 
     def __buttonEventCallback(self, msg):
@@ -262,18 +261,18 @@ class NavSlamTest:
             rospy.wait_for_service("/move_base/clear_costmaps")
             self._clear_costmap_srv = rospy.ServiceProxy("/move_base/clear_costmaps", std_srvs.Empty)
         self._clear_costmap_srv()
-        rospy.loginfo("Done.")
+        rospy.loginfo("Done (reset costmaps).")
 
     def __resetOdom(self):
         rospy.loginfo("Reset odom ...")
         self._odom_reset_pub.publish(std_msgs.Empty())
-        rospy.loginfo("Done.")
+        rospy.loginfo("Done (reset odom).")
 
     def __resetGoals(self):
         rospy.loginfo("Reset goals ... ")
         self._client.cancel_all_goals()
         self._goal_generator = self.__getNextGoal()
-        rospy.loginfo("Done.")
+        rospy.loginfo("Done (reset goals).")
 
     def __resetRobotModelState(self):
         rospy.loginfo("Reset robot model state in gazebo ... ")
@@ -288,7 +287,7 @@ class NavSlamTest:
         state = ModelState(model_name="mobile_base", pose=pose)
         response = self._reset_robot_model_state_srv(state)
         assert response
-        rospy.loginfo("Done.")
+        rospy.loginfo("Done (reset gazebo state).")
 
     def __resetSlamToolbox(self):
         rospy.loginfo("Reset slam ... ")
@@ -299,7 +298,7 @@ class NavSlamTest:
 
         init_pose = PoseWithCovarianceStamped()
         self._init_pose_pub.publish(init_pose)
-        rospy.loginfo("Done.")
+        rospy.loginfo("Done (reset slam).")
 
 
     def __convertNavOdomMsgToArray(self, msg) -> list:
@@ -347,22 +346,24 @@ class NavSlamTest:
         if "" == self._output_dir:
             rospy.logwarn("No directory is specified, save nothing!")
             return
-        
+        odom_file_header = "timestamp tx ty tz qx qy qz qw vx vy vz wx wy wz"
+        pose_file_header = "timestamp tx ty tz qx qy qz qw"
+       
         # Start saving.
         prefix_path = Path(self._output_dir)
         if len(self._gt_poses) > 0:
-            np.savetxt(prefix_path / "lidar_poses.txt", self._gt_poses, fmt="%.6f", header=self._pose_file_header)
-            rospy.loginfo("Saved gt poses.")
+            np.savetxt(prefix_path / "gt_slam_poses.txt", self._gt_poses, fmt="%.6f", header=pose_file_header)
+            rospy.loginfo("Saved gt slam poses.")
         if len(self._et_poses) > 0:
-            np.savetxt(prefix_path / "visual_poses.txt", self._et_poses, fmt="%.6f", header=self._pose_file_header)
+            np.savetxt(prefix_path / "et_slam_poses.txt", self._et_poses, fmt="%.6f", header=pose_file_header)
             rospy.loginfo("Saved et poses.")
         if len(self._gt_odoms) > 0:
-            np.savetxt(prefix_path / "gt_odoms.txt", self._gt_odoms, fmt="%.6f", header=self._odom_file_header)
-            np.savetxt(prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=self._pose_file_header)
+            np.savetxt(prefix_path / "gt_odoms.txt", self._gt_odoms, fmt="%.6f", header=odom_file_header)
+            np.savetxt(prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=pose_file_header)
             rospy.loginfo("Saved gt odoms.")
         if len(self._et_odoms) > 0:
-            np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=self._odom_file_header)
-            np.savetxt(prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=self._pose_file_header)
+            np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=odom_file_header)
+            np.savetxt(prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header)
             rospy.loginfo("Saved et odoms.")
         stamped_wpts = self.__convertPathMsgToArray(self._planned_path)
         if len(stamped_wpts) > 0:

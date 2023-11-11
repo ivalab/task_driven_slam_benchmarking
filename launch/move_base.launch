@@ -2,17 +2,12 @@
 
   <arg name="vis" default="false"/>
 
-  <!-- navigation stack -->
+  <!-- move_base -->
   <include file="$(find turtlebot_demo)/launch/turtlebot_teb_controller.launch"/>
   
-  <!-- waypoint sender -->
-  <!-- <node name="waypoints_sender" pkg="turtlebot_roboslam" type="waypoints_sender.py"> -->
-      <!-- <param name="path_file" type="string" value="$(find turtlebot_roboslam)/config/square.txt" /> -->
-  <!-- </node> -->
-   
   <!-- Visualization.-->
   <group if="$(arg vis)">
-    <node pkg="rviz" type="rviz" name="closedloop_rviz" output="screen" args="-d $(find turtlebot_roboslam)/launch/closedloop_viz.rviz">
+    <node pkg="rviz" type="rviz" name="closedloop_rviz" output="screen" args="-d $(find closedloop_nav_slam)/launch/closedloop_viz.rviz">
     </node>
   </group>
 

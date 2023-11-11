@@ -1,16 +1,16 @@
 # closedloop_nav_slam
 
-This file provides steps to install and run ros packages on both gazebo and real turtlebot with **ROS Noetic** and **Ubuntu 20.04**.
+This file provides steps to install and run ros packages on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
 
 ## Install.
 1. Install wstool.
         
         sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall
 
-2. Install sensor drivers.
+2. Install sensor drivers (for real robot testing).
 
-        sudo apt install ros-noetic-urg-node # lidar
-        sudo apt install ros-noetic-realsense2-camera # camera
+        sudo apt install ros-noetic-urg-node # hokuyo laser
+        sudo apt install ros-noetic-realsense2-camera # realsense camera
         sudo apt install ros-noetic-realsense2-description # camera urdf
 
 3. Initialize workspace.
@@ -35,29 +35,19 @@ This file provides steps to install and run ros packages on both gazebo and real
         catkin build -j8 -DCMAKE_BUILD_TYPE=Release
 
 
-## Running Simulation.
+5. Build SLAM methods.
+
+        # TODO
+
+## Run Simulation.
 ```bash
 roscore
 
 # Start gazebo.
 roslaunch closedloop_nav_slam gazebo_turtlebot.launch
 
-# Start navigation stack (in urtlebot_demo pkg).
-# Make sure move_base use visual estimation (has "visual" prefix in tf and topics)
-roslaunch closedloop_nav_slam nav_slam_test.launch vis:=true
-
-# Start slam.
-roslaunch slam_toolbox nav_slam_test.launch mode:=localization
-
-# Start waypoints_sender node
-roscd turtlebot_roboslam
-python scripts/closedloop_nav_test.py --mode localization
-
-# Trigger button to start sending goals
-roscd turtlebot_roboslam
-sh scripts/start_robot_button0.sh
-
-# Or skip the above two steps and start onekey.py script and record rosbags
-roscd turtlebot_robslam
+# Run onekey testing script.
+roscd closedloop_nav_slam
+# Configure the parameters under ./scripts/config.yml
 python scripts/onekey.py
 ```

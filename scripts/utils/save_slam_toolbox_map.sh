@@ -16,4 +16,4 @@ echo mapname=$PREFIX/$NAME
 rosservice call /slam_toolbox/save_map "name: {data: '$PREFIX/$NAME'}"
 rosservice call /slam_toolbox/serialize_map "filename: '$PREFIX/$NAME'"
 
-echo "Done"
+echo "Done (cmd save map)."

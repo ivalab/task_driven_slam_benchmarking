@@ -1,0 +1,24 @@
+# Common params.
+result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/slam_toolbox
+vis: "false"
+test_type: "gazebo" # [gazebo, realworld]
+gt_odom_topic: "/odom_sparse"
+et_odom_topic: "/visual/odom"
+gt_pose_topic: "/slam/pose"
+et_pose_topic: "/visual/pose"
+
+# Waypoints navigator params.
+env_name: "tsrb"
+robot_init_pose: [34.0, -6.0, 0.0] # x, y, theta
+path_files: ["path0", "path1"]
+trials: 10
+
+# Move base params.
+
+# SLAM params.
+slam_method: "slam_toolbox"
+mode: "mapping" # Useless
+
+# MSF params.
+enable_msf: true
+slam_sensor_type: "laser" # [stereo, laser, lidar]
