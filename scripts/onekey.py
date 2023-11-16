@@ -50,7 +50,7 @@ class CentralManager:
         # Ros node.
         rospy.init_node("onekey_node", anonymous=True)
         # We used this message signal to determine if a path has been completed.
-        self._sub = rospy.Subscriber("/planned_path", PathMsg, self.__path_callback)
+        self._sub = rospy.Subscriber("/actual_path", PathMsg, self.__path_callback)
         self._stop = False
 
     def __path_callback(self, msg):

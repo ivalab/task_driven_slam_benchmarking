@@ -68,7 +68,9 @@ class NavSlamTest:
         self._task_failed = False
         self._goal_generator = None
         self._button_pressed = False
-        self._planned_path = None
+        self._goals = []
+        self._planned_wpts = []
+        self._actual_path = []
         self._gt_odom = None
         self._gt_odoms = []
         self._et_odoms = []
@@ -89,7 +91,7 @@ class NavSlamTest:
             "/mobile_base/commands/reset_odometry", std_msgs.Empty, queue_size=1, latch=True
         )
         self._init_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
-        self._nav_path_pub = rospy.Publisher("/planned_path", PathMsg, queue_size=1)
+        self._nav_path_pub = rospy.Publisher("/actual_path", PathMsg, queue_size=1)
 
         # ROS service.
         self._clear_costmap_srv = None
@@ -152,18 +154,14 @@ class NavSlamTest:
         self._et_poses.append(self.__convertStampedPoseMsgToArray(msg))
 
     def __setupGoals(self, path_file):
-        goal_list = self.__readGoals(path_file)
-        self._goals = []
-        self._planned_path = PathMsg(header=Header(frame_id="/planned"))
-        for p in goal_list:
+        self._planned_wpts = self.__readGoals(path_file)
+        for p in self._planned_wpts:
             goal = Pose()
             goal.position.x = p[0]
             goal.position.y = p[1]
             goal.orientation.w = np.cos(p[2] / 2.0)
             goal.orientation.z = np.sin(p[2] / 2.0)
             self._goals.append(goal)
-            self._planned_path.poses.append(PoseStamped(pose=goal))
-        self._nav_path_pub.publish(self._planned_path)
 
     def __readGoals(self, path_file):
         waypoints = np.loadtxt(self._wpts_prefix / "waypoints.txt")
@@ -185,7 +183,7 @@ class NavSlamTest:
                 rospy.sleep(0.2)
                 continue
             try:
-                self._planned_path = PathMsg(header=Header(frame_id="/actual"))
+                self._actual_path = PathMsg(header=Header(frame_id="/actual"))
                 success = True
                 for loop_count in range(self._loops):
                     rospy.loginfo(f"----- Loop: {loop_count} -----")
@@ -196,12 +194,12 @@ class NavSlamTest:
                             rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
                             break
                         rospy.sleep(self._idle_time)
-                        self._planned_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
+                        self._actual_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
                     if not success:
                         break
                     rospy.loginfo(f"Sequencing finished: {loop_count}.")
                 rospy.loginfo("Publish planned path with timestamp.")
-                self._nav_path_pub.publish(self._planned_path)
+                self._nav_path_pub.publish(self._actual_path)
                 rospy.loginfo("Done.")
                 self._stop = True
                 self._button_pressed = False
@@ -333,7 +331,7 @@ class NavSlamTest:
 
     def __convertPathMsgToArray(self, msg) -> list:
         stamped_wpts = []
-        for p in self._planned_path.poses:
+        for p in msg.poses:
             stamped_wpts.append([
                 p.header.stamp.to_sec(),
                 p.pose.position.x,
@@ -365,10 +363,13 @@ class NavSlamTest:
             np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=odom_file_header)
             np.savetxt(prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header)
             rospy.loginfo("Saved et odoms.")
-        stamped_wpts = self.__convertPathMsgToArray(self._planned_path)
+        stamped_wpts = self.__convertPathMsgToArray(self._actual_path)
         if len(stamped_wpts) > 0:
             np.savetxt(prefix_path / "actual_path.txt", stamped_wpts, fmt="%.6f", header="timestamp x y theta")
             rospy.loginfo("Saved actual path.")
+        if len(self._planned_wpts) > 0:
+            np.savetxt(prefix_path / "planned_waypoints.txt", self._planned_wpts, fmt="%.6f", header="x y theta")
+            rospy.loginfo("Saved planned waypoints.")
         rospy.loginfo("Saving Done!")
 
 if __name__ == "__main__":
