@@ -64,6 +64,13 @@ private:
     /**
      * @brief
      *
+     * @param msg
+     */
+    void RobotOdomMsgCallback(const nav_msgs::OdometryConstPtr& msg);
+
+    /**
+     * @brief
+     *
      * @param msg_in
      * @param msg_out
      */
@@ -74,25 +81,31 @@ private:
                         nav_msgs::Odometry&       msg_out) const;
 
     // Frame info.
-    std::string source_frame_{""};
-    std::string target_frame_{""};
+    std::string source_msg_parent_frame_{""};
+    std::string source_msg_child_frame_{""};
+    std::string odom_frame_{"odom"};
     std::string base_frame_{"base_footprint"};
-    std::string prefix_{"visual"};
+    std::string prefix_{""};
+    bool        enable_body_velocity_{true};
+
+    std::unique_ptr<nav_msgs::Odometry> robot_odom_ptr_{nullptr};
 
     // ROS info.
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub_;
     message_filters::Subscriber<geometry_msgs::PoseWithCovarianceStamped>
                    pose_sub_;
     ros::Publisher odom_pub_;
-    bool           is_sTt_valid_{false};
-    tf2::Transform sTt_;  // transform from source to target
+    bool           is_transform_valid_{false};
+    // oTb = oTp_ * pTc * cTb_; pTc is from source msg
+    tf2::Transform oTp_;  // transform from odom to source_msg_parent frame
+    tf2::Transform cTb_;  // transform from source_msg_child to base frame
 
     // Tf info.
     // tf2_ros::StaticTransformBroadcaster static_br_;
     std::unique_ptr<tf2_ros::Buffer>               tf_;
     std::unique_ptr<tf2_ros::TransformListener>    tfL_;
     std::unique_ptr<tf2_ros::TransformBroadcaster> tfB_;
-    double transform_timeout_ = 0.5;  // seconds
+    double transform_timeout_ = 0.0;  // seconds
 };
 }  // namespace cl
 

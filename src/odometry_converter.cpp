@@ -77,16 +77,20 @@ void MessageConverter::InitRos(ros::NodeHandle& pnh)
     std::string source_msg_type("odom");
     pnh.param("source_msg_type", source_msg_type, std::string("odom"));
 
-    pnh.param("prefix", prefix_, std::string("visual"));
+    pnh.param("prefix", prefix_, std::string(""));
     pnh.param("base_frame", base_frame_, std::string("base_footprint"));
-    pnh.param("source_frame", source_frame_, std::string(""));
-    pnh.param("target_frame", target_frame_, std::string(""));
-    pnh.param("transform_timeout", transform_timeout_, 0.5);
-    is_sTt_valid_ = false;
-    if (source_frame_.empty() || target_frame_.empty())
+    pnh.param("source_msg_parent_frame", source_msg_parent_frame_,
+              std::string(""));
+    pnh.param("source_msg_child_frame", source_msg_child_frame_,
+              std::string(""));
+    pnh.param("transform_timeout", transform_timeout_, 0.0);
+    pnh.param("enable_body_velocity", enable_body_velocity_, true);
+    is_transform_valid_ = false;
+    if (source_msg_parent_frame_.empty() || source_msg_child_frame_.empty())
     {
-        is_sTt_valid_ = true;
-        sTt_.setIdentity();  // identity
+        oTp_.setIdentity();
+        cTb_.setIdentity();
+        is_transform_valid_ = true;
     }
 
     // Subscriber and publisher.
@@ -96,6 +100,9 @@ void MessageConverter::InitRos(ros::NodeHandle& pnh)
         pose_sub_.subscribe(pnh, "/source_msg_topic", queue_size);
         pose_sub_.registerCallback(
             boost::bind(&MessageConverter::PoseMsgCallback, this, _1));
+        pnh.subscribe<nav_msgs::Odometry>(
+            "/robot_odom_topic", queue_size,
+            &MessageConverter::RobotOdomMsgCallback, this);
     }
     else if ("odom" == source_msg_type)
     {
@@ -104,8 +111,7 @@ void MessageConverter::InitRos(ros::NodeHandle& pnh)
             boost::bind(&MessageConverter::OdomMsgCallback, this, _1));
     }
 
-    odom_pub_ =
-        pnh.advertise<nav_msgs::Odometry>("/" + prefix_ + "/odom", queue_size);
+    odom_pub_ = pnh.advertise<nav_msgs::Odometry>("/visual/odom", queue_size);
 }
 
 void MessageConverter::PoseMsgCallback(
@@ -121,19 +127,27 @@ void MessageConverter::PoseMsgCallback(
     odom_msg->twist.twist.angular.x = 0.0;
     odom_msg->twist.twist.angular.y = 0.0;
     odom_msg->twist.twist.angular.z = 0.0;
+    if (robot_odom_ptr_)
+    {
+        odom_msg->twist = robot_odom_ptr_->twist;
+    }
     this->OdomMsgCallback(odom_msg);
 }
 
 void MessageConverter::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
 {
-    if (!is_sTt_valid_)
+    if (!is_transform_valid_)
     {
         try
         {
-            const geometry_msgs::TransformStamped tf_msg = tf_->lookupTransform(
-                source_frame_, target_frame_, ros::Time(0));
-            tf2::convert(tf_msg.transform, sTt_);
-            is_sTt_valid_ = true;
+            geometry_msgs::TransformStamped tf_msg = tf_->lookupTransform(
+                base_frame_, source_msg_parent_frame_, ros::Time(0));
+            tf2::convert(tf_msg.transform, oTp_);
+            tf_msg = tf_->lookupTransform(source_msg_child_frame_, base_frame_,
+                                          ros::Time(0));
+            tf2::convert(tf_msg.transform, cTb_);
+
+            is_transform_valid_ = true;
         }
         catch (tf2::TransformException ex)
         {
@@ -146,8 +160,15 @@ void MessageConverter::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
     // copy from the original message
     nav_msgs::Odometry out;
     out.header          = msg->header;
-    out.header.frame_id = "odom";
-    out.child_frame_id  = "/" + prefix_ + "/" + base_frame_;
+    out.header.frame_id = odom_frame_;
+    if (prefix_.empty())
+    {
+        out.child_frame_id = base_frame_;
+    }
+    else
+    {
+        out.child_frame_id = prefix_ + "/" + base_frame_;
+    }
 
     TransformPose(*msg, out);
     TransformTwist(*msg, out);
@@ -170,38 +191,62 @@ void MessageConverter::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
     tfB_->sendTransform(out_tf);
 }
 
+void MessageConverter::RobotOdomMsgCallback(
+    const nav_msgs::OdometryConstPtr& msg)
+{
+    if (nullptr == robot_odom_ptr_)
+    {
+        robot_odom_ptr_ = std::make_unique<nav_msgs::Odometry>();
+    }
+    *robot_odom_ptr_ = *msg;
+}
+
 void MessageConverter::TransformPose(const nav_msgs::Odometry& msg_in,
                                      nav_msgs::Odometry&       msg_out) const
 {
-    //
     const tf2::Transform input_pose  = PoseToTf(msg_in.pose.pose);
-    const tf2::Transform output_pose = sTt_ * input_pose;
-    // tf::Transformer::transformPose(odom_link_, input_pose, output_pose);
-
-    msg_out.pose.pose = TfToPose(output_pose);
+    const tf2::Transform output_pose = oTp_ * input_pose * cTb_;
+    msg_out.pose.pose                = TfToPose(output_pose);
 }
 
 void MessageConverter::TransformTwist(const nav_msgs::Odometry& msg_in,
                                       nav_msgs::Odometry&       msg_out) const
 {
-    //
-    tf2::Vector3 twist_rot(msg_in.twist.twist.angular.x,
-                           msg_in.twist.twist.angular.y,
-                           msg_in.twist.twist.angular.z);
-    tf2::Vector3 twist_vel(msg_in.twist.twist.linear.x,
-                           msg_in.twist.twist.linear.y,
-                           msg_in.twist.twist.linear.z);
+    if (enable_body_velocity_)
+    {
+        // Assume flat ground.
+        double x                      = msg_in.twist.twist.linear.x;
+        double y                      = msg_in.twist.twist.linear.y;
+        msg_out.twist.twist.linear.x  = std::sqrt(x * x + y * y);
+        msg_out.twist.twist.linear.y  = 0.0;
+        msg_out.twist.twist.linear.z  = 0.0;
+        msg_out.twist.twist.angular.x = 0.0;
+        msg_out.twist.twist.angular.y = 0.0;
+        msg_out.twist.twist.angular.z = msg_in.twist.twist.angular.z;
+    }
+    else
+    {
+        // @TODO (yanwei) The following transform is problematic!
 
-    tf2::Vector3 out_rot = sTt_.getBasis() * twist_rot;
-    tf2::Vector3 out_vel =
-        sTt_.getBasis() * twist_vel + sTt_.getOrigin().cross(out_rot);
+        //
+        // tf2::Vector3 twist_rot(msg_in.twist.twist.angular.x,
+        //                        msg_in.twist.twist.angular.y,
+        //                        msg_in.twist.twist.angular.z);
+        // tf2::Vector3 twist_vel(msg_in.twist.twist.linear.x,
+        //                        msg_in.twist.twist.linear.y,
+        //                        msg_in.twist.twist.linear.z);
 
-    msg_out.twist.twist.linear.x  = out_vel.x();
-    msg_out.twist.twist.linear.y  = out_vel.y();
-    msg_out.twist.twist.linear.z  = out_vel.z();
-    msg_out.twist.twist.angular.x = out_rot.x();
-    msg_out.twist.twist.angular.y = out_rot.y();
-    msg_out.twist.twist.angular.z = out_rot.z();
+        // tf2::Vector3 out_rot = sTt_.getBasis() * twist_rot;
+        // tf2::Vector3 out_vel =
+        //     sTt_.getBasis() * twist_vel + sTt_.getOrigin().cross(out_rot);
+
+        // msg_out.twist.twist.linear.x  = out_vel.x();
+        // msg_out.twist.twist.linear.y  = out_vel.y();
+        // msg_out.twist.twist.linear.z  = out_vel.z();
+        // msg_out.twist.twist.angular.x = out_rot.x();
+        // msg_out.twist.twist.angular.y = out_rot.y();
+        // msg_out.twist.twist.angular.z = out_rot.z();
+    }
 }
 
 }  // namespace cl

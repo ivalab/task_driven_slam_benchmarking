@@ -64,6 +64,7 @@ class NavSlamTest:
         self._output_dir = args.output_dir
 
         # Other parameters.
+        self._wait_for_resetting = True
         self._stop = False
         self._task_failed = False
         self._goal_generator = None
@@ -104,6 +105,7 @@ class NavSlamTest:
         # Reset a few.
         self.__resetRobotModelState()
         self.__resetOdom()
+        self._wait_for_resetting = False
 
         # Hook-up with move_base
         self._client = actionlib.SimpleActionClient("move_base", move_base_msgs.MoveBaseAction)
@@ -141,16 +143,28 @@ class NavSlamTest:
         self._task_failed = True
 
     def __groundTruthOdometryCallback(self, msg):
+        if self._wait_for_resetting:
+            self._gt_odoms.clear()
+            return
         self._gt_odom = msg
         self._gt_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __estimatedOdometryCallback(self, msg):
+        if self._wait_for_resetting:
+            self._et_odoms.clear()
+            return
         self._et_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __groundTruthPoseCallback(self, msg):
+        if self._wait_for_resetting:
+            self._gt_poses.clear()
+            return
         self._gt_poses.append(self.__convertStampedPoseMsgToArray(msg))
 
     def __estimatedPoseCallback(self, msg):
+        if self._wait_for_resetting:
+            self._et_poses.clear()
+            return
         self._et_poses.append(self.__convertStampedPoseMsgToArray(msg))
 
     def __setupGoals(self, path_file):
@@ -242,6 +256,7 @@ class NavSlamTest:
             yield goal
 
     def __reset(self):
+        self._wait_for_resetting = True
         self.__resetGoals()
         rospy.sleep(0.2)
         self.__resetRobotModelState()
@@ -250,6 +265,7 @@ class NavSlamTest:
         rospy.sleep(0.2)
         self.__resetOdom()
         rospy.sleep(0.2)
+        self._wait_for_resetting = False
         # self.__resetSlamToolbox()
         # rospy.sleep(0.2)
 

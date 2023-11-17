@@ -6,10 +6,11 @@
     <arg name="robot_init_pose" default="34.0 -6.0 0.0"/>
     <arg name="idle_time" default="3"/>
     <arg name="output_dir" default=""/>
+    <arg name="loops" default="3"/>
     <arg name="gt_pose_topic" default="/slam/pose"/>
     <arg name="et_pose_topic" default="/visual/pose"/>
 
-    <node name="waypoints_navigator" type="waypoints_navigator.py" pkg="closedloop_nav_slam" output="screen" args="--env $(arg env) --path_file $(arg path_file) --reset --trials $(arg trials) --robot_init_pose $(arg robot_init_pose) --idle_time $(arg idle_time) --output_dir $(arg output_dir)">
+    <node name="waypoints_navigator" type="waypoints_navigator.py" pkg="closedloop_nav_slam" output="screen" args="--env $(arg env) --path_file $(arg path_file) --reset --trials $(arg trials) --robot_init_pose $(arg robot_init_pose) --idle_time $(arg idle_time) --output_dir $(arg output_dir) --loops $(arg loops)">
         <remap from="/gt_odom" to="/odom_sparse"/>
         <remap from="/et_odom" to="/visual/odom"/>
         <remap from="/gt_pose" to="$(arg gt_pose_topic)"/>

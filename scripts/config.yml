@@ -1,5 +1,5 @@
-# Common params.
-result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/slam_toolbox
+## Common params.
+result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
 vis: "false"
 test_type: "gazebo" # [gazebo, realworld]
 gt_odom_topic: "/odom_sparse"
@@ -7,18 +7,66 @@ et_odom_topic: "/visual/odom"
 gt_pose_topic: "/slam/pose"
 et_pose_topic: "/visual/pose"
 
-# Waypoints navigator params.
+## Waypoints navigator params.
 env_name: "tsrb"
 robot_init_pose: [34.0, -6.0, 0.0] # x, y, theta
-path_files: ["path0", "path1"]
-trials: 10
+path_files: ["path0", "path1", "path2", "path3"]
+trials: 5
+loops: 1
 
-# Move base params.
+## Move base params.
 
-# SLAM params.
-slam_method: "slam_toolbox"
-mode: "mapping" # Useless
+## SLAM params.
+# slam_sensor_type: "stereo" # [stereo, laser, lidar]
+# slam_method: ["gfgg", "slam_toolbox", "perfect_odometry"]
 
-# MSF params.
-enable_msf: true
-slam_sensor_type: "laser" # [stereo, laser, lidar]
+# # gfgg
+# slam_method: "gfgg"
+# mode: "mapping" # Useless
+# good_feature_num: 400
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "left_camera_frame"
+# source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+
+# # orb3
+# slam_method: "orb3"
+# mode: "mapping" # Useless
+# feature_num: 1200
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "left_camera_frame"
+# source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+
+# # msckf
+# slam_method: "msckf"
+# mode: "odometry" # Useless
+# feature_num: 240
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "gyro_link"
+# source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+
+# # dsol
+# slam_method: "dsol"
+# mode: "odometry" # Useless
+# feature_num: 20 # cell_size
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "left_camera_frame"
+# source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+
+# perfect_odometry
+slam_method: "perfect_odometry"
+mode: "odometry"
+enable_msf: false
+
+# slam_toolbox
+# slam_method: "slam_toolbox"
+# mode: "mapping" # Useless
+
+## MSF params.
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "base_footprint"
+# source_msg_child_frame: "gyro_link"

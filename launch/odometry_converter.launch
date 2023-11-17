@@ -1,0 +1,23 @@
+<launch>
+
+    <param name="/use_sim_time" value="true" />
+    <arg name="source_msg_parent_frame" default=""/>
+    <arg name="source_msg_child_frame" default=""/>
+    <arg name="source_msg_type" default="pose"/>
+    <arg name="source_msg_topic" default=""/>
+
+    <!-- convert perfect odom to target odom message -->
+    <node name="odometry_converter" pkg="closedloop_nav_slam" type="odometry_converter_node" output="screen">
+        <param name="transform_timeout" value="0.0" />
+        <param name="source_msg_parent_frame" value="$(arg source_msg_parent_frame)"/>
+        <param name="source_msg_child_frame" value="$(arg source_msg_child_frame)"/>
+        <param name="source_msg_type" value="$(arg source_msg_type)"/>
+        <remap from="/source_msg_topic" to="$(arg source_msg_topic)"/>
+    </node>
+
+    <node name="visual_robot_publisher" type="robot_state_publisher" pkg="robot_state_publisher">
+        <!-- <param name="tf_prefix" value="visual"/> -->
+    </node>
+
+</launch>
+  

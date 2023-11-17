@@ -3,6 +3,8 @@
     <arg name="imu_type" default="mpu6000"/>
     <arg name="slam_sensor_type" default="laser"/> <!-- stereo, laser -->
     <arg name="slam_pose_topic" default="/slam/pose"/>
+    <arg name="source_msg_parent_frame" default="base_footprint"/>
+    <arg name="source_msg_child_frame" default="gyro_link"/>
  
     <param name="/use_sim_time" value="true" />
 
@@ -16,14 +18,15 @@
 
     <!-- convert msf output to odom message -->
     <node name="odometry_converter" pkg="closedloop_nav_slam" type="odometry_converter_node">
+        <param name="transform_timeout" value="0.0"/>
         <param name="source_msg_type" value="odom"/>
         <remap from="/source_msg_topic" to="/msf_core/odometry"/>
-        <param name="source_frame" value="gyro_link"/>
-        <param name="target_frame" value="base_footprint"/>
+        <param name="source_msg_parent_frame" value="$(arg source_msg_parent_frame)"/>
+        <param name="source_msg_child_frame" value="$(arg source_msg_child_frame)"/>
     </node>
 
     <node name="visual_robot_publisher" type="robot_state_publisher" pkg="robot_state_publisher">
-        <param name="tf_prefix" value="visual"/>
+        <!-- <param name="tf_prefix" value="visual"/> -->
     </node>
 
     <!-- initialize msf -->

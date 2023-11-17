@@ -20,7 +20,7 @@ import yaml
 
 import rospy
 
-from modular.node_module import MoveBaseNode, WaypointsNavigatorNode
+from modular.node_module import MoveBaseNode, WaypointsNavigatorNode, OdometryConverterNode
 from modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
 
 CONFIG_PREFIX = Path(__file__).parent.resolve()
@@ -45,7 +45,8 @@ class CentralManager:
         assert self._params
 
         # Create result dir.
-        Path(self._params["result_dir"]).mkdir(parents=True, exist_ok=True)
+        self._prefix = Path(self._params["result_dir"]) / self._params["slam_method"]
+        self._prefix.mkdir(parents=True, exist_ok=True)
 
         # Ros node.
         rospy.init_node("onekey_node", anonymous=True)
@@ -66,7 +67,7 @@ class CentralManager:
 
                 print(f"Trial: {trial}")
 
-                path_dir = Path(self._params["result_dir"]) / pfile / ("trial" + str(trial))
+                path_dir = self._prefix / pfile / ("trial" + str(trial))
                 path_dir.mkdir(parents=True, exist_ok=True)
 
                 # - Assuming gazebo is already started in a separated window.
@@ -97,6 +98,11 @@ class CentralManager:
                     msf_node = MsfNode(self._params)
                     msf_node.start()
                     time.sleep(10.0)
+                elif "perfect_odometry" != self._params["slam_method"]:
+                    print("MSF disabled, start odometry converter node ...")
+                    msf_node = OdometryConverterNode(self._params)
+                    msf_node.start()
+                    time.sleep(2.0)
 
                 # - Start move_base
                 print("Start move_base ...")

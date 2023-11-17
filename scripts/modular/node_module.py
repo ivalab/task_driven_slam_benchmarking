@@ -71,8 +71,21 @@ class WaypointsNavigatorNode(NodeBase):
             + " path_file:=" + self._path_file + ".txt"
             + " trials:=" + str(self._params["trials"])
             + " output_dir:=" + self._output_dir
+            + " loops:=" + str(self._params["loops"])
         )
         return cmd
+
+    def reset(self) -> bool:
+        raise NotImplementedError
+
+
+class OdometryConverterNode(NodeBase):
+    def __init__(self, params: Dict):
+        names = ["odometry_converter", "visual_robot_publisher"]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        return "roslaunch closedloop_nav_slam odometry_converter.launch source_msg_topic:=" + self._params["et_pose_topic"] + " source_msg_parent_frame:=" + self._params["source_msg_parent_frame"] + " source_msg_child_frame:=" + self._params["source_msg_child_frame"]
 
     def reset(self) -> bool:
         raise NotImplementedError

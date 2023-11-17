@@ -96,6 +96,7 @@
     
     <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher"  required="true">
       <param name="publish_frequency" type="double" value="30.0" />
+      <param name="tf_prefix" value="groundtruth"/>
     </node>
     
 
@@ -105,6 +106,7 @@
 
   <node name="map_odom_publisher" pkg="gazebo_fake_localization" type="gazebo_fake_localization" required="true" launch-prefix="">
     <param name="odom_frame_id" value="odom"/>
+    <param name="base_frame_id" value="groundtruth/base_footprint"/>
   </node>
 
 <!-- downsample the imu message in gazebo; no need in real turtlebot; there might be warning on msf_core: imu message drop: simply ignore that! -->
