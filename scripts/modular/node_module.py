@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @file node_module.py
 @author Yanwei Du (yanwei.du@gatech.edu)
 @date 11-10-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
-'''
+"""
 
-from abc import ABC, abstractmethod
 import os
 import subprocess
-from typing import Dict
 import time
+from abc import ABC, abstractmethod
+from typing import Dict
+
 
 class NodeBase(ABC):
-
     def __init__(self, names: list, params: Dict):
         self._names = names
         self._params = params
@@ -46,6 +46,7 @@ class NodeBase(ABC):
     def reset(self) -> bool:
         return False
 
+
 class MoveBaseNode(NodeBase):
     def __init__(self, params: Dict):
         names = ["move_base", "navigation_velocity_smoother"]
@@ -58,6 +59,7 @@ class MoveBaseNode(NodeBase):
 
     def reset(self) -> bool:
         raise NotImplementedError
+
 
 class WaypointsNavigatorNode(NodeBase):
     def __init__(self, params: Dict, path_file: str, output_dir: str):

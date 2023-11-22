@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @file nav_slam_test.py
 @author Yanwei Du (yanwei.du@gatech.edu)
 @date 11-07-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
-'''
+"""
 
 
 """
@@ -22,8 +22,8 @@ Functions
 
 import argparse
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import actionlib
 import move_base_msgs.msg as move_base_msgs
@@ -43,11 +43,7 @@ from std_msgs.msg import Header
 
 
 class NavSlamTest:
-    def __init__(
-        self,
-        args
-    ):
-
+    def __init__(self, args):
         # Init ROS.
         rospy.init_node("waypoints_navigator", anonymous=True, disable_signals=True)
 
@@ -314,46 +310,42 @@ class NavSlamTest:
         self._init_pose_pub.publish(init_pose)
         rospy.loginfo("Done (reset slam).")
 
-
     def __convertNavOdomMsgToArray(self, msg) -> list:
         return [
-                msg.header.stamp.to_sec(),
-                msg.pose.pose.position.x,
-                msg.pose.pose.position.y,
-                msg.pose.pose.position.z,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-                msg.pose.pose.orientation.w,
-                msg.twist.twist.linear.x,
-                msg.twist.twist.linear.y,
-                msg.twist.twist.linear.z,
-                msg.twist.twist.angular.x,
-                msg.twist.twist.angular.y,
-                msg.twist.twist.angular.z,
+            msg.header.stamp.to_sec(),
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+            msg.pose.pose.position.z,
+            msg.pose.pose.orientation.x,
+            msg.pose.pose.orientation.y,
+            msg.pose.pose.orientation.z,
+            msg.pose.pose.orientation.w,
+            msg.twist.twist.linear.x,
+            msg.twist.twist.linear.y,
+            msg.twist.twist.linear.z,
+            msg.twist.twist.angular.x,
+            msg.twist.twist.angular.y,
+            msg.twist.twist.angular.z,
         ]
 
     def __convertStampedPoseMsgToArray(self, msg) -> list:
         return [
-                msg.header.stamp.to_sec(),
-                msg.pose.pose.position.x,
-                msg.pose.pose.position.y,
-                msg.pose.pose.position.z,
-                msg.pose.pose.orientation.x,
-                msg.pose.pose.orientation.y,
-                msg.pose.pose.orientation.z,
-                msg.pose.pose.orientation.w,
+            msg.header.stamp.to_sec(),
+            msg.pose.pose.position.x,
+            msg.pose.pose.position.y,
+            msg.pose.pose.position.z,
+            msg.pose.pose.orientation.x,
+            msg.pose.pose.orientation.y,
+            msg.pose.pose.orientation.z,
+            msg.pose.pose.orientation.w,
         ]
 
     def __convertPathMsgToArray(self, msg) -> list:
         stamped_wpts = []
         for p in msg.poses:
-            stamped_wpts.append([
-                p.header.stamp.to_sec(),
-                p.pose.position.x,
-                p.pose.position.y,
-                2.0 * np.arccos(p.pose.orientation.w)
-            ])
+            stamped_wpts.append(
+                [p.header.stamp.to_sec(), p.pose.position.x, p.pose.position.y, 2.0 * np.arctan2(p.pose.orientation.z, p.pose.orientation.w)]
+            )
         return stamped_wpts
 
     def saveToFile(self):
@@ -362,7 +354,7 @@ class NavSlamTest:
             return
         odom_file_header = "timestamp tx ty tz qx qy qz qw vx vy vz wx wy wz"
         pose_file_header = "timestamp tx ty tz qx qy qz qw"
-       
+
         # Start saving.
         prefix_path = Path(self._output_dir)
         if len(self._gt_poses) > 0:
@@ -373,11 +365,15 @@ class NavSlamTest:
             rospy.loginfo("Saved et poses.")
         if len(self._gt_odoms) > 0:
             np.savetxt(prefix_path / "gt_odoms.txt", self._gt_odoms, fmt="%.6f", header=odom_file_header)
-            np.savetxt(prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=pose_file_header)
+            np.savetxt(
+                prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=pose_file_header
+            )
             rospy.loginfo("Saved gt odoms.")
         if len(self._et_odoms) > 0:
             np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=odom_file_header)
-            np.savetxt(prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header)
+            np.savetxt(
+                prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header
+            )
             rospy.loginfo("Saved et odoms.")
         stamped_wpts = self.__convertPathMsgToArray(self._actual_path)
         if len(stamped_wpts) > 0:
@@ -388,17 +384,19 @@ class NavSlamTest:
             rospy.loginfo("Saved planned waypoints.")
         rospy.loginfo("Saving Done!")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # parser.add_argument("--mode", dest="mode", default="localization", help="mode: localization|mapping")
     parser.add_argument("--env", dest="env", default="tsrb", help="environment (tsrb | classroom)")
     parser.add_argument("--path_file", dest="path_file", default="path0.txt", help="path")
     parser.add_argument("--loops", default="1", type=int, help="number of loops (repeatability)")
-    parser.add_argument('--reset', default=False, action='store_true')
-    parser.add_argument('--robot_init_pose', nargs=3, default=[34.0, -6.0, 0.0], help='robot init pose: [x, y, theta]', type=float)
+    parser.add_argument("--reset", default=False, action="store_true")
+    parser.add_argument(
+        "--robot_init_pose", nargs=3, default=[34.0, -6.0, 0.0], help="robot init pose: [x, y, theta]", type=float
+    )
     parser.add_argument("--idle_time", default="1.0", type=float, help="idle time in seconds at each waypoint")
-    parser.add_argument("--output_dir", default="",type=str, help="directory to save stats data" )
+    parser.add_argument("--output_dir", default="", type=str, help="directory to save stats data")
 
     args, unknown = parser.parse_known_args()
 

@@ -1,0 +1,6 @@
+# perfect odometry
+slam_method: "perfect_odometry"
+mode: "localization"
+enable_msf: false
+slam_sensor_type: "ground_truth"
+loops: 1

@@ -1,0 +1,9 @@
+# dsol
+slam_method: "msckf"
+mode: "odometry"
+feature_num: 240
+enable_msf: true
+slam_sensor_type: "stereo"
+source_msg_parent_frame: "gyro_link"
+source_msg_child_frame: "gyro_link"
+loops: 1

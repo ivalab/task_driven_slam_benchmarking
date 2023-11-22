@@ -1,0 +1,9 @@
+# dsol
+slam_method: "dsol"
+mode: "odometry"
+cell_size: 20
+enable_msf: true
+slam_sensor_type: "stereo"
+source_msg_parent_frame: "left_camera_frame"
+source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+loops: 1

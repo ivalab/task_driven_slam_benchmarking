@@ -1,28 +1,32 @@
 #!/usr/bin/env python
 
-import rospy
+import os
 import random
-import sys, os, time
-from geometry_msgs.msg import PoseStamped, Pose, PoseArray, Point, Quaternion, Transform, TransformStamped
-from sensor_msgs.msg import Image, CameraInfo
+import sys
+import time
 from copy import deepcopy
-import rospkg
-
-from tf2_ros import TransformListener, Buffer, LookupException, ConnectivityException, ExtrapolationException, StaticTransformBroadcaster
-import tf
-#from pips_test import gazebo_driver
-
-from gazebo_msgs.msg import ModelStates, ModelState
-from gazebo_msgs.srv import SetModelState
-from gazebo_msgs.srv import GetModelState
-from gazebo_msgs.srv import DeleteModel
 
 import numpy as np
-
-from gazebo_ros import gazebo_interface
-import std_srvs.srv as std_srvs
-  
+import rospkg
+import rospy
 import std_msgs.msg as std_msgs
+import std_srvs.srv as std_srvs
+import tf
+from gazebo_msgs.msg import ModelState, ModelStates
+from gazebo_msgs.srv import DeleteModel, GetModelState, SetModelState
+from gazebo_ros import gazebo_interface
+from geometry_msgs.msg import (Point, Pose, PoseArray, PoseStamped, Quaternion,
+                               Transform, TransformStamped)
+from sensor_msgs.msg import CameraInfo, Image
+from tf2_ros import (Buffer, ConnectivityException, ExtrapolationException,
+                     LookupException, StaticTransformBroadcaster,
+                     TransformListener)
+
+#from pips_test import gazebo_driver
+
+
+
+  
 
 
 

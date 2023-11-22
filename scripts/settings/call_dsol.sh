@@ -4,8 +4,7 @@
 
 ROS_WS=$1
 TRACK_LOG_PATH=$2
-# FEATURE_NUM=$3
-FEATURE_NUM=20 # It's actuall cell_size (feature_num = image_(w or h) / cell_size)
+CELL_SIZE=$3 # feature_num = image_(w or h) / cell_size
 SLAM_POSE_TOPIC=$4
 
 # Source ros workspace.

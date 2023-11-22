@@ -1,0 +1,9 @@
+# orb3
+slam_method: "orb3"
+mode: "slam"
+feature_num: 1200
+enable_msf: true
+slam_sensor_type: "stereo"
+source_msg_parent_frame: "left_camera_frame"
+source_msg_child_frame: "gyro_link" # "left_camera_optical_frame"
+loops: 3
