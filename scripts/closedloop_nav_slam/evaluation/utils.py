@@ -92,10 +92,14 @@ class TrajectoryInfo:
     def compute_accuracy_and_precision(self):
         """Compuate accuracy and precision of each planned wpt"""
         self._success_rate = np.full((self.get_planned_wpts_count()), 0.0)
+        self._accuracy = np.full((self.get_planned_wpts_count(), 2), np.nan)
+        self._precision = np.full((self.get_planned_wpts_count(), 2), np.nan)
         planned_wpts = None
         act_wpts = np.full((self.get_planned_wpts_count(), 3, len(self._data_dict)), np.nan)
         for trial, result in self._data_dict.items():
             data = result.data
+            if len(data.reached_stamped_wpts) < 1:
+                continue
             act_wpts[:len(data.reached_stamped_wpts), :, trial] = data.act_stamped_wpts[:, 1:] # assumes the wpts are reached sequentially without skipping
             planned_wpts = data.planned_wpts # stays the same for each trial
             # Compute success rate``
@@ -103,7 +107,6 @@ class TrajectoryInfo:
         self._success_rate /= len(self._data_dict.keys())
 
         # Compute accuracy
-        self._accuracy = np.full((self.get_planned_wpts_count(), 2), np.nan)
         self._accuracy[:, 0] = np.nanmean(
             np.linalg.norm(act_wpts[:, :2, :] - planned_wpts[:, :2, None], axis=1), axis=-1
         )
@@ -112,7 +115,6 @@ class TrajectoryInfo:
         )
 
         # Compute precision
-        self._precision = np.full((self.get_planned_wpts_count(), 2), np.nan)
         wpt_mean = np.nanmean(act_wpts, axis=-1)
         self._precision[:, 0] = np.nanmean(
             np.linalg.norm(act_wpts[:, :2, :] - wpt_mean[:, :2, None], axis=1), axis=-1

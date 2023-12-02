@@ -73,6 +73,7 @@ class NavSlamTest:
         self._et_odoms = []
         self._gt_poses = []
         self._et_poses = []
+        self._robot_odoms = []
 
         # ROS subscribers.
         rospy.Subscriber("/mobile_base/events/button", ButtonEvent, self.__buttonEventCallback)
@@ -80,6 +81,7 @@ class NavSlamTest:
         rospy.Subscriber("/mobile_base/events/bumper", BumperEvent, self.__bumperEventCallback)
         rospy.Subscriber("/gt_odom", Odometry, self.__groundTruthOdometryCallback)
         rospy.Subscriber("/et_odom", Odometry, self.__estimatedOdometryCallback)
+        rospy.Subscriber("/robot_odom", Odometry, self.__robotOdometryCallback)
         rospy.Subscriber("/gt_pose", PoseWithCovarianceStamped, self.__groundTruthPoseCallback)
         rospy.Subscriber("/et_pose", PoseWithCovarianceStamped, self.__estimatedPoseCallback)
 
@@ -112,7 +114,7 @@ class NavSlamTest:
         # Start navigation.
         self.__navigate()
 
-        # rospy.spin()
+        rospy.spin()
 
         self.saveToFile()
 
@@ -137,6 +139,12 @@ class NavSlamTest:
         self._stop = True
         self._client.cancel_all_goals()
         self._task_failed = True
+
+    def __robotOdometryCallback(self, msg):
+        if self._wait_for_resetting:
+            self._robot_odoms.clear()
+            return
+        self._robot_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __groundTruthOdometryCallback(self, msg):
         if self._wait_for_resetting:
@@ -190,6 +198,7 @@ class NavSlamTest:
     def __navigate(self):
         while not rospy.is_shutdown():
             if self._stop or not self._button_pressed:
+                rospy.loginfo_throttle(60, "WptNavigator: waiting for CMD to start the robot.")
                 rospy.sleep(0.2)
                 continue
             try:
@@ -292,8 +301,8 @@ class NavSlamTest:
         pose = Pose()
         pose.position.x = self._robot_init_pose[0]
         pose.position.y = self._robot_init_pose[1]
-        pose.orientation.w = np.cos(np.deg2rad(self._robot_init_pose[2]) / 2.0)
-        pose.orientation.z = np.sin(np.deg2rad(self._robot_init_pose[2]) / 2.0)
+        pose.orientation.w = np.cos(self._robot_init_pose[2] / 2.0)
+        pose.orientation.z = np.sin(self._robot_init_pose[2] / 2.0)
         state = ModelState(model_name="mobile_base", pose=pose)
         response = self._reset_robot_model_state_srv(state)
         assert response
@@ -375,6 +384,9 @@ class NavSlamTest:
                 prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header
             )
             rospy.loginfo("Saved et odoms.")
+        if len(self._robot_odoms) > 0:
+            np.savetxt(prefix_path / "robot_odoms.txt", self._robot_odoms, fmt="%.6f", header=odom_file_header)
+            rospy.loginfo("Saved robot odoms.")
         stamped_wpts = self.__convertPathMsgToArray(self._actual_path)
         if len(stamped_wpts) > 0:
             np.savetxt(prefix_path / "actual_path.txt", stamped_wpts, fmt="%.6f", header="timestamp x y theta")

@@ -1,0 +1,9 @@
+# hector_slam
+slam_method: "hector_slam"
+mode: "slam"
+enable_msf: false
+slam_sensor_type: "laser"
+source_msg_parent_frame: "base_footprint"
+source_msg_child_frame: "gyro_link"
+loops: 1
+need_map_to_odom_tf: false

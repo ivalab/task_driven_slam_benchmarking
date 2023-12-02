@@ -19,20 +19,19 @@
 
 from pathlib import Path
 
-from evaluation import Evaluation
-from visualization import Visualization
+from closedloop_nav_slam.evaluation.evaluation import Evaluation
+from closedloop_nav_slam.evaluation.visualization import Visualization
 
-SETTINGS_PREFIX = Path(__file__).resolve().parent.parent / "settings"
+from closedloop_nav_slam.utils.path_definitions import *
 
 if __name__ == "__main__":
     methods_list = [
-        "perfect_odometry",
-        "gfgg",
-        "orb3",
-        "dsol",
-        "msckf",
+        # "perfect_odometry",
+        "slam_toolbox",
+        "amcl",
+        # "gmapping",
     ]
-    config_file = SETTINGS_PREFIX / "config.yaml"
+    config_file = SETTINGS_PATH / "config.yaml"
 
     # Run evaluation.
     print("Run evalaution ... ")

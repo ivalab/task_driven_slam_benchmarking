@@ -19,12 +19,9 @@ from nav_msgs.msg import Path as PathMsg
 import numpy as np
 import rospy
 
-from modular.node_module import MoveBaseNode, WaypointsNavigatorNode, OdometryConverterNode
-from modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
-
-CONFIG_PREFIX = Path(__file__).parent.resolve() / "settings"
-CUR_PREFIX = Path(__file__).parent.resolve()
-
+from closedloop_nav_slam.modular.node_module import MoveBaseNode, WaypointsNavigatorNode, MapToOdomPublisherNode
+from closedloop_nav_slam.modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
+from closedloop_nav_slam.utils.path_definitions import *
 
 class bcolors:
     HEADER = "\033[95m"
@@ -67,8 +64,9 @@ class CentralManager:
         for method_index, method_name in enumerate(self._common_params["slam_methods"]):
             method_dir = self._prefix / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
-            params = self.__load_params(CONFIG_PREFIX / (method_name + ".yaml"))
-            params.update(self._common_params)
+            params = self._common_params
+            slam_params = self.__load_params(SLAM_SETTINGS_PATH /(method_name + ".yaml"))
+            params.update(slam_params)
             for pfile in params["path_files"]:
                 print(f"Navigate path file: {pfile} ... ")
 
@@ -88,7 +86,7 @@ class CentralManager:
 
                     # - Reset everything.
                     print("Reset everything ...")
-                    robot_bash_cmd = "bash " + str(CUR_PREFIX) + "/utils/start_robot.sh"
+                    robot_bash_cmd = "bash " + str(UTILS_PATH) + "/start_robot.sh"
                     cmd_reset_robot = robot_bash_cmd + " 1 1"  # BUTTON STATE
                     subprocess.Popen(cmd_reset_robot, shell=True)
                     time.sleep(10.0)
@@ -106,17 +104,25 @@ class CentralManager:
                         msf_node = MsfNode(params)
                         msf_node.start()
                         time.sleep(10.0)
-                    elif "perfect_odometry" != method_name:
-                        print("MSF disabled, start odometry converter node ...")
-                        msf_node = OdometryConverterNode(params)
-                        msf_node.start()
-                        time.sleep(2.0)
+                    # elif "perfect_odometry" != method_name:
+                    #     print("MSF disabled, start odometry converter node ...")
+                    #     msf_node = OdometryConverterNode(params)
+                    #     msf_node.start()
+                    #     time.sleep(2.0)
+
+                    # - Start map_to_odom_publisher if needed
+                    m2o_tf_node = None
+                    if params["need_map_to_odom_tf"]:
+                        print("Start map_to_odom_publisher")
+                        m2o_tf_node = MapToOdomPublisherNode(params)
+                        m2o_tf_node.start()
+                        time.sleep(3.0)
 
                     # - Start move_base
                     print("Start move_base ...")
                     mb_node = MoveBaseNode(params)
                     mb_node.start()
-                    time.sleep(5.0)
+                    time.sleep(10.0)
 
                     # - Start robot
                     print("Start the robot ...")
@@ -148,20 +154,22 @@ class CentralManager:
 
                     # - Killing SLAM
                     print("Killing SLAM ...")
+                    if m2o_tf_node:
+                        m2o_tf_node.stop()
+                        time.sleep(3.0)
                     if msf_node:
                         msf_node.stop()
                         time.sleep(5)
-
                     slam_node.stop()
                     time.sleep(5)
+
                     print(f"Done trial {trial}")
                 print(f"Done {pfile}")
             print(f"Done {method_name}")
 
-
 if __name__ == "__main__":
     try:
-        cm = CentralManager(CONFIG_PREFIX / "config.yaml")
+        cm = CentralManager(CONFIG_PATH / "config.yaml")
         cm.run()
     except rospy.ROSInterruptException:
         rospy.loginfo("CM exception caught !!!")

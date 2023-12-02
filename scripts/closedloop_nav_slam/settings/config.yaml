@@ -3,7 +3,8 @@ result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
 # result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 vis: "false"
 test_type: "gazebo" # [gazebo, realworld]
-gt_odom_topic: "/odom_sparse"
+gt_odom_topic: "/ground_truth/odom"
+robot_odom_topic: "/odom_sparse"
 et_odom_topic: "/visual/odom"
 gt_pose_topic: "/slam/pose"
 et_pose_topic: "/visual/pose"
@@ -11,8 +12,8 @@ et_pose_topic: "/visual/pose"
 ## Waypoints navigator params.
 env_name: "tsrb"
 robot_init_pose: [34.0, -6.0, 0.0] # x, y, theta
-path_files: ["path0"] #, "path1", "path2", "path3"]
-trials: 5
+path_files: ["path0", "path1"]
+trials: 10
 
 ## Move base params.
 
@@ -20,7 +21,8 @@ trials: 5
 # params are stored in seperate .yaml files 
 
 # slam_method: "gfgg"
-slam_methods: ["perfect_odometry"]
+# slam_methods: ["msckf", "gfgg", "orb3"]
+slam_methods: ["hector_slam", "gfgg", "orb3"]
 
 ## MSF params.
 # enable_msf: true

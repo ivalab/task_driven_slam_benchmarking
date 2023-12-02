@@ -11,12 +11,13 @@
 
 from pathlib import Path
 
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import yaml
-from utils import EvoEvaluation, MethodBase, NavSlamError, NavSlamData, TrajectoryInfo
+from closedloop_nav_slam.evaluation.utils import EvoEvaluation, MethodBase, NavSlamError, NavSlamData, TrajectoryInfo
 
+from closedloop_nav_slam.utils.path_definitions import *
 
 class Evaluation:
     def __init__(self, mlist, config_file: Path, save_results: bool = False):
@@ -27,7 +28,6 @@ class Evaluation:
         assert self._params
 
         self._methods: List[MethodBase] = []
-        self._settings_prefix = Path(config_file).resolve().parent
         self._result_prefix = Path(self._params["result_dir"]) / self._params["test_type"] / self._params["env_name"]
         self._save_results = save_results
 
@@ -40,7 +40,7 @@ class Evaluation:
         for method_name in self._methods_list:
             print(f"Processing {method_name} ...")
             # Load SLAM testing parameters.
-            self._params.update(self.__load_slam_params(self._settings_prefix / (method_name + ".yaml")))
+            self._params.update(self.__load_slam_params(SLAM_SETTINGS_PATH / (method_name + ".yaml")))
             method = MethodBase.create_slam_method(self._params)
             method_dir = self._result_prefix / method_name
             # Loop over paths.
@@ -52,8 +52,9 @@ class Evaluation:
                     print(f"Processing trial {trial} ...")
                     prefix = pfile_dir / ("trial" + str(trial))
                     # Load nav slam data
-                    nav_slam_data = self.__load_nav_slam_data(prefix)
-
+                    nav_slam_data = self.__load_nav_slam_data(prefix, method_name)
+                    if nav_slam_data is None:
+                        continue
                     # Evaluate slam error.
                     nav_slam_error = self.__compute_nav_slam_error(nav_slam_data)
                     print(f"est_rmse: {nav_slam_error.est_rmse:.02f} m, nav_rmse: {nav_slam_error.nav_rmse:.02f} m success rate: {nav_slam_error.success_rate}")
@@ -77,21 +78,38 @@ class Evaluation:
         assert params
         return params
 
-    def __load_nav_slam_data(self, prefix: Path) -> NavSlamData:
+    def __load_nav_slam_data(self, prefix: Path, method_name: str) -> Optional[NavSlamData]:
+
+        gt_poses_path = prefix / "gt_poses.txt"
+        et_poses_path = prefix / "et_poses.txt"
+        et_slam_poses_path = prefix / "et_slam_poses.txt"
+        planned_wpts_path = prefix / "planned_waypoints.txt"
+        actual_wpts_path = prefix / "actual_path.txt"
+
+        if not gt_poses_path.exists() or not (et_poses_path.exists() or et_slam_poses_path.exists()) or not planned_wpts_path.exists() or not actual_wpts_path.exists():
+            return None
+
+
         # @TODO (yanwei) does it hold true for robot angle?
         offset = np.array(self._params["robot_init_pose"])
-        planned_wpts = np.loadtxt(prefix / "planned_waypoints.txt", ndmin=2) - offset
+        planned_wpts = np.loadtxt(planned_wpts_path, ndmin=2)
         # Any efficient way to do the following in-place subtraction?
-        reached_stamped_wpts = np.loadtxt(prefix / "actual_path.txt", ndmin=2)
-        wpts = reached_stamped_wpts[:, 1:]
-        wpts = wpts - offset
-        reached_stamped_wpts[:, 1:] = wpts
+        reached_stamped_wpts = np.loadtxt(actual_wpts_path, ndmin=2)
+        # wpts = reached_stamped_wpts[:, 1:]
+        # wpts = wpts - offset
+        # reached_stamped_wpts[:, 1:] = wpts
 
         # Find the start point(timestamp), skip the mapping data.
         start_timestamp = self.__find_start_timestamp(planned_wpts, reached_stamped_wpts)
         reached_stamped_wpts = reached_stamped_wpts[reached_stamped_wpts[:, 0] >= start_timestamp, :]
-        act_poses = np.loadtxt(prefix / "gt_poses.txt", ndmin=2)
-        est_poses = np.loadtxt(prefix / "et_poses.txt", ndmin=2)
+        act_poses = np.loadtxt(gt_poses_path, ndmin=2)
+        et_poses = []
+        if et_poses_path.exists():
+            est_poses = np.loadtxt(et_poses_path, ndmin=2)
+        else:
+            est_poses = np.loadtxt(et_slam_poses_path, ndmin=2)
+        if "perfect_odometry" != method_name:
+            est_poses[:, 1:3] += offset[:2]
         act_poses = act_poses[act_poses[:, 0] >= start_timestamp, :]
         est_poses = est_poses[est_poses[:, 0] >= start_timestamp, :]
 
@@ -127,7 +145,7 @@ class Evaluation:
     def __quat_to_yaw(self, quat: np.array) -> float:
         """Convert quat (x, y, z, w) to yaw in radian, assume zerop pitch and roll"""
         assert quat.shape == (4,) or quat.shape == (4, 1) or quat.shape == (1, 4)
-        assert np.abs(quat[0]) < 1e-5 and np.abs(quat[1]) < 1e-5
+        # assert np.abs(quat[0]) < 1e-5 and np.abs(quat[1]) < 1e-5
         return 2.0 * np.arctan2(quat[2], quat[3])
 
 

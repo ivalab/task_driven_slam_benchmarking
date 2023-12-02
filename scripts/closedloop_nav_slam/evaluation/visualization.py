@@ -12,7 +12,7 @@
 from matplotlib import pyplot as plt
 from scipy.spatial import ConvexHull
 
-from utils import MethodBase
+from closedloop_nav_slam.evaluation.utils import MethodBase
 
 from typing import List
 
@@ -24,8 +24,8 @@ import yaml
 class Visualization:
     # plot everything on one figure.
     # https://matplotlib.org/stable/gallery/color/named_colors.html
-    COLORS = ["lime", "darkorange", "maroon", "darkcyan", "cyan", "violet", "blue"]
-    MARKERS = ["*", "+", "^", "o", "s", "<", "p"]
+    COLORS = ["lime", "darkorange", "maroon", "darkcyan", "cyan", "violet", "blue", "lime", "darkorange", "maroon", "darkcyan", "cyan", "violet", "blue"]
+    MARKERS = ["*", "+", "^", "o", "s", "<", "p", "<", "s", "o", "^", "+", "*"]
 
     def __init__(self, config_file: str, methods: List[MethodBase], save_figs: bool = False):
         self._methods = methods
@@ -96,11 +96,13 @@ class Visualization:
                 ordered_wpts_errs[:act_count, :, trial] = result.err.wpts_errs * 100.0 # m to cm.
             max_abs_err = self.__plot_navigation_position_errors(ax_pos_err, ordered_wpts_errs)
             max_abs_err += max_abs_err * 0.1
+            self.__plot_navigation_control_tolerance(ax_pos_err)
             ax_pos_err.set_xlim([-max_abs_err, max_abs_err])
             ax_pos_err.set_ylim([-max_abs_err, max_abs_err])
             ax_pos_err.set_title(f"{method.name}\nWaypoint navigation position errors")
             ax_pos_err.set_xlabel("x(cm)")
             ax_pos_err.set_ylabel("y(cm)")
+            ax_pos_err.set_aspect('equal',adjustable='box')
             ax_pos_err.legend() 
             plt.show(block=False)
             plt.pause(1)
@@ -133,7 +135,7 @@ class Visualization:
             fig = plt.figure()
             ax = plt.gca()
             ax.plot(traj.accuracy[:, 0] * 100.0, traj.precision[:, 0] * 100.0, marker="o", linestyle="None")
-            max_y_bound = max(np.max(traj.accuracy[:, 0]), np.max(traj.precision[:, 0]))
+            max_y_bound = max(np.max(traj.accuracy[:, 0] * 100.0), np.max(traj.precision[:, 0] * 100.0))
             max_y_bound += max_y_bound * 0.1
             ax.set_xlabel("accuracy (cm)")
             ax.set_ylabel("precision (cm)")
@@ -166,7 +168,11 @@ class Visualization:
                 ax.plot(all_wpts_errs[:, 0], all_wpts_errs[:, 1], color=Visualization.COLORS[method_index], marker=Visualization.MARKERS[method_index], linestyle="None", markersize=5, label=method.name)
                 hull = ConvexHull(traj.all_wpts_errs[:, :2])
                 for simplex in hull.simplices:
-                    ax.plot(all_wpts_errs[simplex, 0], all_wpts_errs[simplex, 1], color=Visualization.COLORS[method_index], linestyle="dashdot", markersize=0.5)               
+                    ax.plot(all_wpts_errs[simplex, 0], all_wpts_errs[simplex, 1], color=Visualization.COLORS[method_index], linestyle="dashdot", markersize=0.5)
+                # Plot navigation control tolerance
+                self.__plot_navigation_control_tolerance(ax, plot_label=(method_index == 0))
+                plt.close(indexed_figs[pfile])
+
 
                 # accuracy and precision
                 if pfile not in indexed_wap_figs.keys():
@@ -176,19 +182,24 @@ class Visualization:
                 axs_ap[0].plot(xdata, np.append(traj.accuracy[:, 0],  traj.get_avg_accuracy()[0]) * 100.0, color=Visualization.COLORS[method_index], marker=Visualization.MARKERS[method_index], label=method.name) # m to cm
                 axs_ap[1].plot(xdata, np.append(traj.precision[:, 0],  traj.get_avg_precision()[0]) * 100.0, color=Visualization.COLORS[method_index], marker=Visualization.MARKERS[method_index], label=method.name) # m to cm
                 axs_ap[2].plot(xdata, np.append(traj.success_rate,  traj.get_avg_success_rate()) * 100.0, color=Visualization.COLORS[method_index],    marker=Visualization.MARKERS[method_index], label=method.name)
+                plt.close(indexed_wap_figs[pfile])
 
                 if pfile not in indexed_ap_figs.keys():
                     indexed_ap_figs[pfile] = plt.figure()
                     indexed_ap_figs[pfile].add_subplot(111)
                 ax = indexed_ap_figs[pfile].get_axes()[0]
                 ax.plot(traj.accuracy[:, 0] * 100.0, traj.precision[:, 0] * 100.0, color=Visualization.COLORS[method_index], marker=Visualization.MARKERS[method_index], linestyle="None", label=method.name)
+                plt.close(indexed_ap_figs[pfile])
 
         for pfile, fig in indexed_figs.items():
             ax = fig.get_axes()[0]
             max_abs_err = indexed_max_abs_errs[pfile]
             max_abs_err += max_abs_err * 0.1
-            ax.set_xlim([-max_abs_err, max_abs_err])
-            ax.set_ylim([-max_abs_err, max_abs_err])
+            ax.set_aspect('equal',adjustable='box')
+            # ax.set_xlim([-max_abs_err, max_abs_err])
+            # ax.set_ylim([-max_abs_err, max_abs_err])
+            ax.set_xlim([-100.0, 100.0])
+            ax.set_ylim([-100.0, 100.0])
             ax.set_title("Waypoint navigation position errors")
             ax.set_xlabel("x(cm)")
             ax.set_ylabel("y(cm)")
@@ -198,7 +209,7 @@ class Visualization:
 
             plt.show(block=False)
             plt.pause(1)
-            plt.close()
+            plt.close(fig)
 
 
         for pfile, fig in indexed_wap_figs.items():
@@ -219,7 +230,7 @@ class Visualization:
 
             plt.show(block=False)
             plt.pause(1)
-            plt.close()
+            plt.close(fig)
 
 
         for pfile, fig in indexed_ap_figs.items():
@@ -234,7 +245,7 @@ class Visualization:
                 fig.savefig(fname=self._result_prefix / f"{pfile}_accuracy_precision.png")
             plt.show(block=False)
             plt.pause(1)
-            plt.close()
+            plt.close(fig)
     
     def __plot_navigation_position_errors(self, ax, wpts_errs: np.ndarray):
         max_abs_err = 0.0
@@ -249,3 +260,11 @@ class Visualization:
             for simplex in hull.simplices:
                 ax.plot(xy_errs[simplex, 0], xy_errs[simplex, 1], color=Visualization.COLORS[wpt_index], linestyle="dashdot", markersize=0.5)
         return max_abs_err
+
+    def __plot_navigation_control_tolerance(self, ax, plot_label = True):
+        theta = np.linspace(0, 2.0 * np.pi, 150)
+        radius = 0.1 * 100.0 # m to cm
+        x = radius * np.cos(theta)
+        y = radius * np.sin(theta)
+        label = "control tolerance" if plot_label else None
+        ax.plot(x, y, linestyle="dashdot", label=label, color="r", markersize=1)

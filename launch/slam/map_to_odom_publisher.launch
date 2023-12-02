@@ -1,0 +1,21 @@
+<launch>
+
+    <param name="/use_sim_time" value="true" />
+    <arg name="source_msg_parent_frame" default="base_footprint"/>
+    <arg name="source_msg_child_frame" default="base_footprint"/>
+    <arg name="source_msg_type" default="pose"/>
+    <arg name="source_msg_topic" default="/visual/pose"/>
+    <arg name="map_frame" default="slam_map"/>
+
+    <node name="map_to_odom_publisher" pkg="closedloop_nav_slam" type="map_to_odom_publisher_node" output="screen">
+        <param name="map_frame" value="$(arg map_frame)"/>
+        <param name="transform_timeout" value="0.5" />
+        <param name="transform_publish_period" value="0.1" />
+        <param name="source_msg_parent_frame" value="$(arg source_msg_parent_frame)"/>
+        <param name="source_msg_child_frame" value="$(arg source_msg_child_frame)"/>
+        <param name="source_msg_type" value="$(arg source_msg_type)"/>
+        <remap from="/source_msg_topic" to="$(arg source_msg_topic)"/>
+    </node>
+
+</launch>
+  

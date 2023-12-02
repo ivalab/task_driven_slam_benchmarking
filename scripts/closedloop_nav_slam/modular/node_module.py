@@ -71,9 +71,12 @@ class WaypointsNavigatorNode(NodeBase):
         cmd = (
             "roslaunch closedloop_nav_slam waypoints_navigator.launch" + " env:=" + self._params["env_name"]
             + " path_file:=" + self._path_file + ".txt"
+            + " robot_init_pose:='" + " ".join(str(v) for v in self._params["robot_init_pose"]) + "'"
             + " trials:=" + str(self._params["trials"])
             + " output_dir:=" + self._output_dir
             + " loops:=" + str(self._params["loops"])
+            + " gt_odom_topic:=" + self._params["gt_odom_topic"]
+            + " et_odom_topic:=" + self._params["et_odom_topic"]
         )
         return cmd
 
@@ -81,16 +84,24 @@ class WaypointsNavigatorNode(NodeBase):
         raise NotImplementedError
 
 
-class OdometryConverterNode(NodeBase):
+# class OdometryConverterNode(NodeBase):
+#     def __init__(self, params: Dict):
+#         names = ["odometry_converter", "visual_robot_publisher"]
+#         super().__init__(names, params)
+
+#     def compose_start_cmd(self) -> str:
+#         return "roslaunch closedloop_nav_slam odometry_converter.launch source_msg_topic:=" + self._params["et_pose_topic"] + " source_msg_parent_frame:=" + self._params["source_msg_parent_frame"] + " source_msg_child_frame:=" + self._params["source_msg_child_frame"]
+
+#     def reset(self) -> bool:
+#         raise NotImplementedError
+
+class MapToOdomPublisherNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["odometry_converter", "visual_robot_publisher"]
+        names = ["map_to_odom_publisher"]
         super().__init__(names, params)
 
     def compose_start_cmd(self) -> str:
-        return "roslaunch closedloop_nav_slam odometry_converter.launch source_msg_topic:=" + self._params["et_pose_topic"] + " source_msg_parent_frame:=" + self._params["source_msg_parent_frame"] + " source_msg_child_frame:=" + self._params["source_msg_child_frame"]
-
-    def reset(self) -> bool:
-        raise NotImplementedError
+        return "roslaunch closedloop_nav_slam map_to_odom_publisher.launch source_msg_topic:=" + self._params["et_pose_topic"] + " source_msg_parent_frame:=" + self._params["source_msg_parent_frame"] + " source_msg_child_frame:=" + self._params["source_msg_child_frame"]
 
 # Unit test
 if __name__ == "__main__":

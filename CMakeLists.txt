@@ -140,7 +140,10 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(odometry_converter_node src/odometry_converter.cpp)
+add_executable(odometry_converter_node       src/odometry_converter.cpp)
+add_executable(map_to_odom_publisher_node    src/map_to_odom_publisher.cpp)
+add_executable(perfect_odometry_helper_node  src/perfect_odometry_helper.cpp)
+add_executable(tf_to_pose_converter_node     src/tf_to_pose_converter.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -156,6 +159,15 @@ add_executable(odometry_converter_node src/odometry_converter.cpp)
 target_link_libraries(odometry_converter_node
   ${catkin_LIBRARIES}
 )
+target_link_libraries(map_to_odom_publisher_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(perfect_odometry_helper_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(tf_to_pose_converter_node
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -167,7 +179,9 @@ target_link_libraries(odometry_converter_node
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/waypoints_navigator.py
+  scripts/closedloop_nav_slam/ros/ground_truth_odometry_publisher.py
+  scripts/closedloop_nav_slam/ros/onekey.py
+  scripts/closedloop_nav_slam/ros/waypoints_navigator.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

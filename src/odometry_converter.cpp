@@ -78,6 +78,7 @@ void MessageConverter::InitRos(ros::NodeHandle& pnh)
     pnh.param("source_msg_type", source_msg_type, std::string("odom"));
 
     pnh.param("prefix", prefix_, std::string(""));
+    pnh.param("map_frame", map_frame_, std::string("map"));
     pnh.param("base_frame", base_frame_, std::string("base_footprint"));
     pnh.param("source_msg_parent_frame", source_msg_parent_frame_,
               std::string(""));
@@ -85,10 +86,11 @@ void MessageConverter::InitRos(ros::NodeHandle& pnh)
               std::string(""));
     pnh.param("transform_timeout", transform_timeout_, 0.0);
     pnh.param("enable_body_velocity", enable_body_velocity_, true);
+    pnh.param("pubish_map_to_odom", publish_map_to_odom_, false);
     is_transform_valid_ = false;
     if (source_msg_parent_frame_.empty() || source_msg_child_frame_.empty())
     {
-        oTp_.setIdentity();
+        mTp_.setIdentity();
         cTb_.setIdentity();
         is_transform_valid_ = true;
     }
@@ -142,7 +144,7 @@ void MessageConverter::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
         {
             geometry_msgs::TransformStamped tf_msg = tf_->lookupTransform(
                 base_frame_, source_msg_parent_frame_, ros::Time(0));
-            tf2::convert(tf_msg.transform, oTp_);
+            tf2::convert(tf_msg.transform, mTp_);
             tf_msg = tf_->lookupTransform(source_msg_child_frame_, base_frame_,
                                           ros::Time(0));
             tf2::convert(tf_msg.transform, cTb_);
@@ -185,10 +187,43 @@ void MessageConverter::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
     odom_pub_.publish(out);
 
     // Convert odom to tf;
-    const geometry_msgs::TransformStamped out_tf =
+    const geometry_msgs::TransformStamped tf_mTb =
         OdomToTf(out, transform_timeout_);
 
-    tfB_->sendTransform(out_tf);
+    if (!publish_map_to_odom_)
+    {
+        tfB_->sendTransform(tf_mTb);
+    }
+    else
+    {
+        // Look for base to odom
+        tf2::Transform bTo;
+        try
+        {
+            geometry_msgs::TransformStamped tf_msg =
+                tf_->lookupTransform(base_frame_, odom_frame_,
+                                     msg->header.stamp - ros::Duration(0.01));
+            tf2::convert(tf_msg.transform, bTo);
+        }
+        catch (tf2::TransformException ex)
+        {
+            ROS_ERROR("%s", ex.what());
+            return;
+        }
+
+        // Compute map to odom;
+        tf2::Transform mTb;
+        tf2::convert(tf_mTb.transform, mTb);
+        const tf2::Transform mTo = mTb * bTo;
+
+        geometry_msgs::TransformStamped tf_mTo;
+        tf_mTo.header.frame_id = map_frame_;
+        tf_mTo.header.stamp =
+            msg->header.stamp + ros::Duration(transform_timeout_);
+        tf_mTo.child_frame_id = odom_frame_;
+        tf2::convert(mTo, tf_mTo.transform);
+        tfB_->sendTransform(tf_mTo);
+    }
 }
 
 void MessageConverter::RobotOdomMsgCallback(
@@ -205,7 +240,7 @@ void MessageConverter::TransformPose(const nav_msgs::Odometry& msg_in,
                                      nav_msgs::Odometry&       msg_out) const
 {
     const tf2::Transform input_pose  = PoseToTf(msg_in.pose.pose);
-    const tf2::Transform output_pose = oTp_ * input_pose * cTb_;
+    const tf2::Transform output_pose = mTp_ * input_pose * cTb_;
     msg_out.pose.pose                = TfToPose(output_pose);
 }
 
