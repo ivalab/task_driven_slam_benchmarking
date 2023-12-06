@@ -27,9 +27,11 @@ from closedloop_nav_slam.utils.path_definitions import *
 if __name__ == "__main__":
     methods_list = [
         # "perfect_odometry",
+        # "gfgg",
+        "orb3",
         "slam_toolbox",
-        "amcl",
-        # "gmapping",
+        "msckf",
+        "dsol",
     ]
     config_file = SETTINGS_PATH / "config.yaml"
 

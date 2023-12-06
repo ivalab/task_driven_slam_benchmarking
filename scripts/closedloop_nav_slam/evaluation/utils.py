@@ -64,7 +64,8 @@ class SingleTrialInfo:
     data: NavSlamData
     err: NavSlamError
 
-
+def convert_unit(mat: np.ndarray, unit_cm: bool = False):
+    return mat * 100.0 if unit_cm else mat
 class TrajectoryInfo:
     def __init__(self):
         self._data_dict: Dict[int, SingleTrialInfo] = {}
@@ -123,35 +124,36 @@ class TrajectoryInfo:
             np.linalg.norm(act_wpts[:, -1, :] - wpt_mean[:, -1, None], axis=1), axis=-1
         )
 
-    @property
-    def accuracy(self):
-        return self._accuracy
+    def get_accuracy(self, unit_cm: bool = False):
+        return convert_unit(self._accuracy, unit_cm)
 
-    @property
-    def precision(self):
-        return self._precision
+    def get_precision(self, unit_cm: bool = False):
+        return convert_unit(self._precision, unit_cm)
 
-    @property
-    def success_rate(self):
+    def get_sr(self):
+        """Success rate"""
         return self._success_rate
 
     @property
     def data_dict(self):
         return self._data_dict
 
-    @property
-    def all_wpts_errs(self):
-        return self._all_wpts_errs
+    def get_all_wpts_errs(self, unit_cm: bool = False):
+        return np.column_stack([self.all_wpts_xy_errs(unit_cm), self._all_wpts_errs[:, -1]])
 
-    def get_avg_accuracy(self):
+    def get_all_wpts_xy_errs(self, unit_cm: bool = False):
+        return convert_unit(self._all_wpts_errs[:, :2], unit_cm)
+
+    def get_avg_accuracy(self, unit_cm: bool = False):
         result = np.nanmean(self._accuracy, axis=0)
         assert  2 == result.shape[0]
-        return result
+        return result * 100.0 if unit_cm else result
 
-    def get_avg_precision(self):
-        return np.nanmean(self._precision, axis=0)
+    def get_avg_precision(self, unit_cm: bool = False):
+        result = np.nanmean(self._precision, axis=0)
+        return result * 100.0 if unit_cm else result
 
-    def get_avg_success_rate(self):
+    def get_avg_sr(self):
         return np.nanmean(self._success_rate)
 
 class MethodBase:
@@ -178,8 +180,8 @@ class EvoEvaluation:
 
     def run(self, nav_slam_data: NavSlamData) -> NavSlamError:
         # Compute estimation error.
-        traj_act = self.__convertToEvoFormat(nav_slam_data.act_poses)
-        traj_est = self.__convertToEvoFormat(nav_slam_data.est_poses)
+        traj_act = self.__convert_to_evo_format(nav_slam_data.act_poses)
+        traj_est = self.__convert_to_evo_format(nav_slam_data.est_poses)
 
         # Assuming act and est are from the same frame id (e.g body)
         traj_act, traj_est = sync.associate_trajectories(traj_act, traj_est)
@@ -206,7 +208,7 @@ class EvoEvaluation:
 
         return NavSlamError(nav_errs, nav_rmse, est_errs, est_rmse, s_ratio, wpts_errs)
 
-    def __convertToEvoFormat(self, mat: np.ndarray) -> PoseTrajectory3D:
+    def __convert_to_evo_format(self, mat: np.ndarray) -> PoseTrajectory3D:
         stamps = mat[:, 0]  # n x 1
         xyz = mat[:, 1:4]  # n x 3
         quat = mat[:, 4:8]  # n x 4

@@ -38,18 +38,16 @@ class Evaluation:
     def run(self):
         # Loop over methods.
         for method_name in self._methods_list:
-            print(f"Processing {method_name} ...")
             # Load SLAM testing parameters.
             self._params.update(self.__load_slam_params(SLAM_SETTINGS_PATH / (method_name + ".yaml")))
             method = MethodBase.create_slam_method(self._params)
             method_dir = self._result_prefix / method_name
             # Loop over paths.
             for pfile in self._params["path_files"]:
-                print(f"Processing {pfile} ...")
                 pfile_dir = method_dir / pfile
                 # Loop over rounds.
                 for trial in range(self._params["trials"]):
-                    print(f"Processing trial {trial} ...")
+                    print(f"Processing {method_name}, {pfile}, {trial} ...")
                     prefix = pfile_dir / ("trial" + str(trial))
                     # Load nav slam data
                     nav_slam_data = self.__load_nav_slam_data(prefix, method_name)
@@ -61,9 +59,8 @@ class Evaluation:
 
                     # Add result to method.
                     method.add_result(pfile, trial, nav_slam_data, nav_slam_error)
-                    print(f"Done trial {trial}.")
+                    print(f"Done {method_name}, {pfile}, {trial} ...")
 
-                print(f"Done {pfile}.")
             # Evaluate navigation precision.
             self.__compute_precision(method)
 
