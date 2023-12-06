@@ -6,7 +6,8 @@
   <arg name = "start_x" default="34"/>
   <arg name = "start_y" default="-6"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="0.0"/> 
+  <arg name = "start_yaw" default="0.0"/>
+  <arg name = "laser_type" default="laser"/>
   <!-- 1.5707963 -->
   <!-- tsrb fourth floor meta data END -->
 
@@ -72,7 +73,7 @@
 
     <!--BEGIN turtlebot_gazebo kobuki.launch.xml-->
     
-      <arg name="urdf_file" default="$(find xacro)/xacro '$(find closedloop_nav_slam)/configs/urdf/gazebo/kobuki_hexagons_fisheye_stereo_mpu_6000_laser.urdf.xacro'" />
+      <arg name="urdf_file" default="$(find xacro)/xacro '$(find closedloop_nav_slam)/configs/urdf/gazebo/kobuki_hexagons_fisheye_stereo_mpu_6000_$(arg laser_type).urdf.xacro'" />
     
       <param name="robot_description" command="$(arg urdf_file)" />
       
