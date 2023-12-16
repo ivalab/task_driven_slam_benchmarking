@@ -639,6 +639,23 @@ Visualization Manager:
       Topic: /particlecloud
       Unreliable: false
       Value: false
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 0; 255; 0
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.4000000059604645
+      Name: Waypoints
+      Queue Size: 1
+      Shaft Length: 0.699999988079071
+      Shaft Radius: 0.10000000149011612
+      Shape: Arrow (3D)
+      Topic: /waypoints
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -672,10 +689,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 28.18047332763672
+      Scale: 27.22681999206543
       Target Frame: base_footprint
-      X: -5.685478687286377
-      Y: 0.022244606167078018
+      X: -3.78637433052063
+      Y: -2.623697519302368
     Saved: ~
 Window Geometry:
   CameraLeft:

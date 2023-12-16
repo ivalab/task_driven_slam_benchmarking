@@ -35,7 +35,7 @@ import std_srvs.srv as std_srvs
 from actionlib_msgs.msg import GoalStatus
 from gazebo_msgs.msg import ModelState, ModelStates
 from gazebo_msgs.srv import SetModelState
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped
+from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, PoseArray
 from kobuki_msgs.msg import BumperEvent, ButtonEvent, WheelDropEvent
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMsg
@@ -91,6 +91,7 @@ class NavSlamTest:
         )
         self._init_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
         self._nav_path_pub = rospy.Publisher("/actual_path", PathMsg, queue_size=1)
+        self._pose_array_pub = rospy.Publisher("/waypoints", PoseArray, queue_size=1)
 
         # ROS service.
         self._clear_costmap_srv = None
@@ -195,6 +196,14 @@ class NavSlamTest:
             goals.append([xys[i, 0], xys[i, 1], theta])
         return goals
 
+    def __publish_waypoints(self, goals):
+        pose_array = PoseArray()
+        pose_array.header.frame_id = "map"
+        pose_array.header.stamp = rospy.Time.now()
+        for goal in goals:
+            pose_array.poses.append(goal)
+        self._pose_array_pub.publish(pose_array)
+
     def __navigate(self):
         while not rospy.is_shutdown():
             if self._stop or not self._button_pressed:
@@ -206,6 +215,7 @@ class NavSlamTest:
                 success = True
                 for loop_count in range(self._loops):
                     rospy.loginfo(f"----- Loop: {loop_count} -----")
+                    self.__publish_waypoints(self._goals)
                     for goal in self._goals:
                         rospy.loginfo(f"goal: \n {goal}")
                         success = self.__navigateToGoal(goal_pose=goal)
