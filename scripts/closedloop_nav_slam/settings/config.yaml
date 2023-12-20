@@ -10,19 +10,23 @@ gt_pose_topic: "/slam/pose"
 et_pose_topic: "/visual/pose"
 
 ## Waypoints navigator params.
-env_name: "tsrb"
-robot_init_pose: [34.0, -6.0, 0.0] # x, y, theta
-path_files: ["path0", "path1"]
+env_name: "tsrb_new.bak"
+robot_init_pose: [-40, 14, 0.0] # [34.0, -6.0, 0.0] # x, y, theta
+# env_name: "classroom"
+# robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
+path_files: ["path0"]
 trials: 10
 
 ## Move base params.
+# yaw_goal_tolerance: 0.1 # rad
+xy_goal_tolerance: .3 # meters
 
 ## SLAM params.
 # params are stored in seperate .yaml files 
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["hector_slam", "gfgg", "orb3"]
+slam_methods: ["perfect_odometry"]
 
 ## MSF params.
 # enable_msf: true
