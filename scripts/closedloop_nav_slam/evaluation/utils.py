@@ -2,215 +2,202 @@
 # -*-coding:utf-8 -*-
 """
 @file utils.py
-@author Yanwei Du (yanwei.du@gatech.edu)
-@date 11-13-2023
+@author Yanwei Du (duyanwei0702@gmail.com)
+@date 12-27-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
 """
 
-
-from dataclasses import dataclass
-from enum import Enum
-from typing import List, Dict, Optional
-import yaml
+import subprocess
+from datetime import datetime
+import os
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
-from evo.core import metrics, sync
-from evo.core.result import Result as EvoResult
-from evo.core.trajectory import PosePath3D, PoseTrajectory3D
-from evo.main_ape import ape as evo_ape
-from evo.main_rpe import rpe as evo_rpe
-from evo.tools import file_interface, plot
+import yaml
+from closedloop_nav_slam.evaluation.types import (
+    NavSlamData,
+    NavSlamError,
+    RobotNavigationData,
+)
+from scipy.spatial.transform import Rotation
 
 
-# class syntax
-class MethodType(Enum):
-    MAPPING = 1
-    LOCALIZATION = 2
-    SLAM = 3
-    ODOMETRY = 4
+def yaw_from_quaternion(quat: np.ndarray) -> float:
+    """Extract yaw from quaternion (x, y, z, w)."""
+    assert quat.shape == (4,) or quat.shape == (4, 1) or quat.shape == (1, 4)
+    rot = Rotation.from_quat(quat).as_matrix()
+    return 2.0 * np.arctan2(rot[1, 0], rot[0, 0])
 
 
-class SensorType(Enum):
-    LASER = 1
-    LIDAR = 2
-    STEREO = 3
-    GROUND_TRUTH = 4
+def compute_traj_length(stamped_poses: np.ndarray) -> float:
+    """Compute trajectory length in xy plane"""
+    return np.sum(np.linalg.norm(np.diff(stamped_poses[:, 1:3], axis=0), axis=1))
 
 
-@dataclass
-class NavSlamError:
-    nav_errs: np.array  # Nx1
-    nav_rmse: float
-    est_errs: np.array  # Mx1
-    est_rmse: float
-    success_rate: float  # len(reached_wpts) / len(planned_wpts)
-    wpts_errs: np.ndarray # wpts_num * 3 (x, y, theta)
+def compute_traj_duration(stamped_poses: np.ndarray) -> float:
+    """Compute trajectory duration"""
+    return np.sum(np.diff(stamped_poses[:, 0]))
 
 
-@dataclass
-class NavSlamData:
-    planned_wpts: np.ndarray  # [x, y, theta]
-    reached_stamped_wpts: np.ndarray  # [timestamp, x, y, theta]
-    act_stamped_wpts: np.ndarray  # [timestamp, x, y, theta]
-    act_poses: np.ndarray  # [timestamp, x, y, z, qx, qy, qz, qw]
-    est_poses: np.ndarray  # [timestamp, x, y, z, qx, qy, qz, qw]
-    traj_length: float  # meters
+def cvt_pose_vec2tf(pos_quat_vec: np.ndarray) -> np.ndarray:
+    """
+    pos_quat_vec: (px, py, pz, qx, qy, qz, qw)
+    """
+    pose_tf = np.eye(4)
+    pose_tf[:3, 3] = pos_quat_vec[:3].flatten()
+    rot = Rotation.from_quat(pos_quat_vec[3:].flatten())
+    pose_tf[:3, :3] = rot.as_matrix()
+    return pose_tf
 
 
-@dataclass
-class SingleTrialInfo:
-    data: NavSlamData
-    err: NavSlamError
+def load_params(filepath: Path):
+    params = None
+    with open(filepath, "r") as f:
+        params = yaml.safe_load(f)
+    assert params
+    return params
 
-def convert_unit(mat: np.ndarray, unit_cm: bool = False):
-    return mat * 100.0 if unit_cm else mat
-class TrajectoryInfo:
-    def __init__(self):
-        self._data_dict: Dict[int, SingleTrialInfo] = {}
-        self._all_wpts_errs = np.full((0, 3), np.nan)
-        self._accuracy = np.full((0, 2), np.nan)  # xy, angle
-        self._precision = np.full((0, 2), np.nan) # xy, angle
-        self._success_rate = None
 
-    def is_valid(self) -> bool:
-        return len(self._data_dict) > 0
+def load_planned_waypoints(filename):
+    return np.loadtxt(filename, ndmin=2)
 
-    def get_planned_wpts_count(self) -> int:
-        assert len(self._data_dict) > 0
-        return self._data_dict[list(self._data_dict.keys())[0]].data.planned_wpts.shape[0]
 
-    def add_result(self, trial: int, data: NavSlamData, err: NavSlamError):
-        self._data_dict[trial] = SingleTrialInfo(data, err)
-        self._all_wpts_errs = np.vstack([self._all_wpts_errs, err.wpts_errs])
+def load_nav_slam_data(
+    prefix_path: Path,
+    loops: int = 1,
+    robot_init_xytheta: np.ndarray = np.zeros((3)),
+    compensate_map_offset: bool = False,
+) -> Optional[NavSlamData]:
+    # Compose files paths.
+    act_poses_path = prefix_path / "act_poses.txt"
+    est_poses_path = prefix_path / "est_poses.txt"
+    est_slam_poses_path = prefix_path / "est_slam_poses.txt"
+    planned_wpts_path = prefix_path / "planned_waypoints.txt"
+    visited_wpts_path = prefix_path / "visited_waypoints.txt"
 
-    def get_result(self, trial: int) -> Optional[SingleTrialInfo]:
-        if trial in self._data_dict.keys():
-            return self._data_dict[trial]
+    if (
+        not act_poses_path.exists()
+        or not (est_poses_path.exists() or est_slam_poses_path.exists())
+        or not planned_wpts_path.exists()
+        or not visited_wpts_path.exists()
+    ):
         return None
 
-    def compute_accuracy_and_precision(self):
-        """Compuate accuracy and precision of each planned wpt"""
-        self._success_rate = np.full((self.get_planned_wpts_count()), 0.0)
-        self._accuracy = np.full((self.get_planned_wpts_count(), 2), np.nan)
-        self._precision = np.full((self.get_planned_wpts_count(), 2), np.nan)
-        planned_wpts = None
-        act_wpts = np.full((self.get_planned_wpts_count(), 3, len(self._data_dict)), np.nan)
-        for trial, result in self._data_dict.items():
-            data = result.data
-            if len(data.reached_stamped_wpts) < 1:
-                continue
-            act_wpts[:len(data.reached_stamped_wpts), :, trial] = data.act_stamped_wpts[:, 1:] # assumes the wpts are reached sequentially without skipping
-            planned_wpts = data.planned_wpts # stays the same for each trial
-            # Compute success rate``
-            self._success_rate[:data.reached_stamped_wpts.shape[0]] += 1.0
-        self._success_rate /= len(self._data_dict.keys())
+    # Deal with waypoints.
+    planned_wpts = np.loadtxt(planned_wpts_path, ndmin=2)
+    if planned_wpts.shape[0] <= 0:
+        return None
 
-        # Compute accuracy
-        self._accuracy[:, 0] = np.nanmean(
-            np.linalg.norm(act_wpts[:, :2, :] - planned_wpts[:, :2, None], axis=1), axis=-1
-        )
-        self._accuracy[:, 1] = np.nanmean(
-            np.linalg.norm(act_wpts[:, -1, :] - planned_wpts[:, -1, None], axis=1), axis=-1
-        )
+    # We would like to skip the mapping data.
+    visited_wpts = np.loadtxt(visited_wpts_path, ndmin=2)
+    start_timestamp, end_timestamp = find_localization_range(planned_wpts, visited_wpts, loops)
+    visited_wpts = visited_wpts[(end_timestamp >= visited_wpts[:, 0]) & (visited_wpts[:, 0] >= start_timestamp), :]
+    if visited_wpts.shape[0] <= 0:
+        return None
 
-        # Compute precision
-        wpt_mean = np.nanmean(act_wpts, axis=-1)
-        self._precision[:, 0] = np.nanmean(
-            np.linalg.norm(act_wpts[:, :2, :] - wpt_mean[:, :2, None], axis=1), axis=-1
-        )
-        self._precision[:, 1] = np.nanmean(
-            np.linalg.norm(act_wpts[:, -1, :] - wpt_mean[:, -1, None], axis=1), axis=-1
-        )
+    # Load act(gt) and est pose.
+    act_poses = np.loadtxt(act_poses_path, ndmin=2)
+    if est_poses_path.exists():
+        est_poses = np.loadtxt(est_poses_path, ndmin=2)
+    else:
+        est_poses = np.loadtxt(est_slam_poses_path, ndmin=2)
+    if compensate_map_offset:
+        est_poses[:, 1:] = compensate_offset(est_poses[:, 1:], robot_init_xytheta)
+    act_poses = act_poses[(end_timestamp >= act_poses[:, 0]) & (act_poses[:, 0] >= start_timestamp), :]
+    est_poses = est_poses[(end_timestamp >= est_poses[:, 0]) & (est_poses[:, 0] >= start_timestamp), :]
 
-    def get_accuracy(self, unit_cm: bool = False):
-        return convert_unit(self._accuracy, unit_cm)
+    if act_poses.shape[0] <= 0 or est_poses.shape[0] <= 0:
+        return None
 
-    def get_precision(self, unit_cm: bool = False):
-        return convert_unit(self._precision, unit_cm)
+    # Find the robot actual pose at each waypoint.
+    act_wpts = []
+    for wpt in visited_wpts:
+        timediffs = np.abs(wpt[0] - act_poses[:, 0])
+        val = np.min(timediffs)
+        index = np.argmin(timediffs)
+        assert val < 1e-2  # seconds
+        act_wpts.append(act_poses[index, [0, 1, 2]].tolist() + [yaw_from_quaternion(act_poses[index, -4:])])
 
-    def get_sr(self):
-        """Success rate"""
-        return self._success_rate
+    if len(act_wpts) <= 0:
+        return None
 
-    @property
-    def data_dict(self):
-        return self._data_dict
+    traj_length = compute_traj_length(act_poses)
+    traj_duration = compute_traj_duration(act_poses)
 
-    def get_all_wpts_errs(self, unit_cm: bool = False):
-        return np.column_stack([self.all_wpts_xy_errs(unit_cm), self._all_wpts_errs[:, -1]])
+    if traj_duration <= 0.0 or traj_length <= 0.0:
+        return None
 
-    def get_all_wpts_xy_errs(self, unit_cm: bool = False):
-        return convert_unit(self._all_wpts_errs[:, :2], unit_cm)
+    # @TODO slam poses and extrinsics
+    return NavSlamData(
+        planned_wpts.shape[0],
+        visited_wpts,
+        np.array(act_wpts),
+        np.arange(len(act_wpts), dtype=np.int8),
+        act_poses,
+        est_poses,
+        traj_length,
+        traj_duration,
+    )
 
-    def get_avg_accuracy(self, unit_cm: bool = False):
-        result = np.nanmean(self._accuracy, axis=0)
-        assert  2 == result.shape[0]
-        return result * 100.0 if unit_cm else result
 
-    def get_avg_precision(self, unit_cm: bool = False):
-        result = np.nanmean(self._precision, axis=0)
-        return result * 100.0 if unit_cm else result
+def find_localization_range(planned_wpts, gt_wpts, loops: int) -> Tuple[float, float]:
+    """Find start timestamp where the robot starts doing pure localization in a known map."""
+    assert loops > 0
+    if loops == 1:  # Localization or Odometry mode.
+        return (-1.0, gt_wpts[-1, 0])
+    index = planned_wpts.shape[0] * (loops - 1) - 1  # the last mapping point
+    assert index >= 0
+    if gt_wpts.shape[0] <= index + 1:
+        # It means mission failed, the robot does NOT even finish mapping.
+        start_timestamp = gt_wpts[-1, 0] + 1e-3  # safe margin, ignore all mapping data
+        end_timestamp = start_timestamp
+    else:
+        start_timestamp = gt_wpts[index, 0] + 1e-3  # safe margin
+        end_timestamp = gt_wpts[min(index + planned_wpts.shape[0], gt_wpts.shape[0] - 1), 0]
+    return (start_timestamp, end_timestamp)
 
-    def get_avg_sr(self):
-        return np.nanmean(self._success_rate)
 
-class MethodBase:
-    def __init__(self, name: str, sensor_type: str, method_type: str):
-        self.name = name
-        self.sensor_type = SensorType[sensor_type.upper()]
-        self.method_type = MethodType[method_type.upper()]
+def compensate_offset(pose_array: np.ndarray, xytheta: np.ndarray):
+    wTm = np.eye(4)
+    wTm[:3, :3] = Rotation.from_euler("z", xytheta[-1], degrees=False).as_matrix()
+    wTm[:2, 3] = xytheta[:-1]
 
-        # Navigation data.
-        self.traj_dict: Dict[str, TrajectoryInfo] = {}
+    mTb = np.repeat(np.eye(4)[None, :, :], pose_array.shape[0], axis=0)  # Nx4x4
+    mTb[:, :3, :3] = Rotation.from_quat(pose_array[:, 3:]).as_matrix()
+    mTb[:, :3, 3] = pose_array[:, :3]
 
-    def add_result(self, name: str, trial: int, data: NavSlamData, err: NavSlamError):
-        if name not in self.traj_dict.keys():
-            self.traj_dict[name] = TrajectoryInfo()
-        self.traj_dict[name].add_result(trial, data, err)
+    wTb = wTm @ mTb
 
-    @staticmethod
-    def create_slam_method(params: dict):
-        return MethodBase(params["slam_method"], params["slam_sensor_type"], params["mode"])
+    out_array = np.column_stack([wTb[:, :3, 3].reshape(-1, 3), Rotation.from_matrix(wTb[:, :3, :3]).as_quat()])
+    return out_array
 
-class EvoEvaluation:
-    def __init__(self):
-        pass
 
-    def run(self, nav_slam_data: NavSlamData) -> NavSlamError:
-        # Compute estimation error.
-        traj_act = self.__convert_to_evo_format(nav_slam_data.act_poses)
-        traj_est = self.__convert_to_evo_format(nav_slam_data.est_poses)
+def save_evaluation(prefix: Path, methods: Dict[str, RobotNavigationData], overwrite: bool = True):
+    # Create dir.
+    prefix.mkdir(parents=True, exist_ok=True)
 
-        # Assuming act and est are from the same frame id (e.g body)
-        traj_act, traj_est = sync.associate_trajectories(traj_act, traj_est)
+    for method_name, nav_data in methods.items():
+        filename_path = prefix / (method_name + "_evaluation.pkl")
+        filename = str(filename_path)
+        if filename_path.exists() and not overwrite:
+            postfix = datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
+            cmd_mv = "mv " + filename + " " + filename + "." + postfix
+            subprocess.call(cmd_mv, shell=True)
+        nav_data.save_to_file(filename)
 
-        # traj_method.align_origin(traj_ref)
-        # Call APE
-        ape_result = evo_ape(traj_act, traj_est, pose_relation=metrics.PoseRelation.translation_part)
-        est_rmse = ape_result.stats["rmse"]
-        est_errs = ape_result.np_arrays["error_array"]  # ["timestamps"]
 
-        # Compute success rate
-        wpts_count = nav_slam_data.planned_wpts.shape[0]
-        wpts_act_count = nav_slam_data.reached_stamped_wpts.shape[0]
-        s_ratio = wpts_act_count / wpts_count
+def load_evaluation(prefix: Path, method_list) -> Dict[str, RobotNavigationData]:
+    methods = {}
+    for method_name in method_list:
+        filename = str(prefix / (method_name + "_evaluation.pkl"))
+        assert os.path.exists(filename), f"{filename} is not existed"
+        methods[method_name] = RobotNavigationData(method_name)
+        methods[method_name].load_from_file(filename)
+    return methods
 
-        # Assume the robot navigates to each wpt sequentially and won't skip any previous one.
-        wpts_errs = np.full((wpts_act_count, 3), np.nan)
-        nav_errs = np.full((wpts_act_count, 1), np.nan)
-        nav_rmse = np.nan
-        if s_ratio > 0.0:
-            wpts_errs = nav_slam_data.reached_stamped_wpts[:, 1:] - nav_slam_data.act_stamped_wpts[:, 1:]
-            nav_errs = np.linalg.norm(wpts_errs[:, :2], axis=1) # ignore orientation
-            nav_rmse = np.sqrt(np.mean(nav_errs**2))
 
-        return NavSlamError(nav_errs, nav_rmse, est_errs, est_rmse, s_ratio, wpts_errs)
-
-    def __convert_to_evo_format(self, mat: np.ndarray) -> PoseTrajectory3D:
-        stamps = mat[:, 0]  # n x 1
-        xyz = mat[:, 1:4]  # n x 3
-        quat = mat[:, 4:8]  # n x 4
-        quat = np.roll(quat, 1, axis=1)  # shift 1 column -> w in front column
-        return PoseTrajectory3D(xyz, quat, stamps)
+def compose_dir_path(dir_prefix, params):
+    return Path(dir_prefix) / params["test_type"] / params["env_name"]
