@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @file waypoints_saver.py
 @author Yanwei Du (yanwei.du@gatech.edu)
 @date 12-13-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
-'''
+"""
 
 
 from pathlib import Path
@@ -15,8 +15,8 @@ import rospy
 from geometry_msgs.msg import PoseStamped, PoseArray
 import numpy as np
 
-class WaypointsSaver:
 
+class WaypointsSaver:
     def __init__(self):
         rospy.init_node("waypoints_saver_node")
         self._goal_sub = rospy.Subscriber("/move_base_simple/goal", PoseStamped, self.__goal_callback)
@@ -55,7 +55,12 @@ class WaypointsSaver:
 
     def save(self, prefix_path):
         np.savetxt(prefix_path / "goals.txt", self._goals, fmt="%.6f", header="timestamp tx ty tz qx qy qz qw")
-        np.savetxt(prefix_path / "waypoints.txt", np.column_stack([np.arange(len(self._waypoints)), self._waypoints]), fmt="%.6f", header="index x y theta")
+        np.savetxt(
+            prefix_path / "waypoints.txt",
+            np.column_stack([np.arange(len(self._waypoints)), self._waypoints]),
+            fmt="%.6f",
+            header="index x y theta",
+        )
         rospy.loginfo(f"Saved waypoints to file: {prefix_path / 'waypoints.txt'}")
 
 

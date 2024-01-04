@@ -23,6 +23,7 @@ from closedloop_nav_slam.modular.node_module import MoveBaseNode, WaypointsNavig
 from closedloop_nav_slam.modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
 from closedloop_nav_slam.utils.path_definitions import *
 
+
 class bcolors:
     HEADER = "\033[95m"
     OKBLUE = "\033[94m"
@@ -41,13 +42,15 @@ class CentralManager:
         assert self._common_params
 
         # Create result dir.
-        self._prefix = Path(self._common_params["result_dir"]) / self._common_params["test_type"] / self._common_params["env_name"]
+        self._prefix = (
+            Path(self._common_params["result_dir"]) / self._common_params["test_type"] / self._common_params["env_name"]
+        )
         self._prefix.mkdir(parents=True, exist_ok=True)
 
         # Ros node.
         rospy.init_node("onekey_node", anonymous=True)
         # We used this message signal to determine if a path has been completed.
-        self._sub = rospy.Subscriber("/actual_path", PathMsg, self.__path_callback)
+        self._sub = rospy.Subscriber("/visited_waypoints", PathMsg, self.__path_callback)
         self._stop = False
 
     def __load_params(self, config_file: Path):
@@ -65,7 +68,7 @@ class CentralManager:
             method_dir = self._prefix / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
             params = self._common_params
-            slam_params = self.__load_params(SLAM_SETTINGS_PATH /(method_name + ".yaml"))
+            slam_params = self.__load_params(SLAM_SETTINGS_PATH / (method_name + ".yaml"))
             params.update(slam_params)
             for pfile in params["path_files"]:
                 print(f"Navigate path file: {pfile} ... ")
@@ -166,6 +169,7 @@ class CentralManager:
                     print(f"Done trial {trial}")
                 print(f"Done {pfile}")
             print(f"Done {method_name}")
+
 
 if __name__ == "__main__":
     try:

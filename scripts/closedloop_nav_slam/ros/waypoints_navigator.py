@@ -90,7 +90,7 @@ class NavSlamTest:
             "/mobile_base/commands/reset_odometry", std_msgs.Empty, queue_size=1, latch=True
         )
         self._init_pose_pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1)
-        self._nav_path_pub = rospy.Publisher("/actual_path", PathMsg, queue_size=1)
+        self._nav_path_pub = rospy.Publisher("/visited_waypoints", PathMsg, queue_size=1)
         self._pose_array_pub = rospy.Publisher("/waypoints", PoseArray, queue_size=1)
 
         # ROS service.
@@ -363,7 +363,12 @@ class NavSlamTest:
         stamped_wpts = []
         for p in msg.poses:
             stamped_wpts.append(
-                [p.header.stamp.to_sec(), p.pose.position.x, p.pose.position.y, 2.0 * np.arctan2(p.pose.orientation.z, p.pose.orientation.w)]
+                [
+                    p.header.stamp.to_sec(),
+                    p.pose.position.x,
+                    p.pose.position.y,
+                    2.0 * np.arctan2(p.pose.orientation.z, p.pose.orientation.w),
+                ]
             )
         return stamped_wpts
 
@@ -380,27 +385,27 @@ class NavSlamTest:
             np.savetxt(prefix_path / "gt_slam_poses.txt", self._gt_poses, fmt="%.6f", header=pose_file_header)
             rospy.loginfo("Saved gt slam poses.")
         if len(self._et_poses) > 0:
-            np.savetxt(prefix_path / "et_slam_poses.txt", self._et_poses, fmt="%.6f", header=pose_file_header)
-            rospy.loginfo("Saved et poses.")
+            np.savetxt(prefix_path / "est_slam_poses.txt", self._et_poses, fmt="%.6f", header=pose_file_header)
+            rospy.loginfo("Saved est slam poses.")
         if len(self._gt_odoms) > 0:
-            np.savetxt(prefix_path / "gt_odoms.txt", self._gt_odoms, fmt="%.6f", header=odom_file_header)
+            np.savetxt(prefix_path / "act_odoms.txt", self._gt_odoms, fmt="%.6f", header=odom_file_header)
             np.savetxt(
-                prefix_path / "gt_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=pose_file_header
+                prefix_path / "act_poses.txt", np.array(self._gt_odoms)[:, :8], fmt="%.6f", header=pose_file_header
             )
-            rospy.loginfo("Saved gt odoms.")
+            rospy.loginfo("Saved act(gt) odoms.")
         if len(self._et_odoms) > 0:
-            np.savetxt(prefix_path / "et_odoms.txt", self._et_odoms, fmt="%.6f", header=odom_file_header)
+            np.savetxt(prefix_path / "est_odoms.txt", self._et_odoms, fmt="%.6f", header=odom_file_header)
             np.savetxt(
-                prefix_path / "et_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header
+                prefix_path / "est_poses.txt", np.array(self._et_odoms)[:, :8], fmt="%.6f", header=pose_file_header
             )
-            rospy.loginfo("Saved et odoms.")
+            rospy.loginfo("Saved est odoms.")
         if len(self._robot_odoms) > 0:
             np.savetxt(prefix_path / "robot_odoms.txt", self._robot_odoms, fmt="%.6f", header=odom_file_header)
             rospy.loginfo("Saved robot odoms.")
         stamped_wpts = self.__convertPathMsgToArray(self._actual_path)
         if len(stamped_wpts) > 0:
-            np.savetxt(prefix_path / "actual_path.txt", stamped_wpts, fmt="%.6f", header="timestamp x y theta")
-            rospy.loginfo("Saved actual path.")
+            np.savetxt(prefix_path / "visited_waypoints.txt", stamped_wpts, fmt="%.6f", header="timestamp x y theta")
+            rospy.loginfo("Saved visited waypoints.")
         if len(self._planned_wpts) > 0:
             np.savetxt(prefix_path / "planned_waypoints.txt", self._planned_wpts, fmt="%.6f", header="x y theta")
             rospy.loginfo("Saved planned waypoints.")
