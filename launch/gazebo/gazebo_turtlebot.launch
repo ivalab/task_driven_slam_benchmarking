@@ -2,24 +2,35 @@
 
   <arg name = "laser_type" default="laser"/> <!-- others can be "vlp16", "laser"-->
 
-  <!-- tsrb fourth floor meta data BEGIN -->
-  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
+  <!-- ############################ TSRB WORLD BEGIN ####################### -->
+  <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/>
   <arg name = "start_x" default="-40"/>
   <arg name = "start_y" default="14"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="0.0"/>
+  <arg name = "start_yaw" default="0.0"/> -->
   <!-- 34, -6, 0 (pi/2 = 1.5707963) -->
-  <!-- tsrb fourth floor meta data END -->
+  <!-- ############################ TSRB WORLD END ####################### -->
 
-  <!-- classroom meta data BEGIN -->
+  <!-- ############################ CLASSROOM WORLD BEGIN ####################### -->
   <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/classroom_textured_collid.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/classroom/classroom_textured_20231206.yaml"/>
   <arg name = "start_x" default="9"/>
   <arg name = "start_y" default="-5"/>
   <arg name = "start_z" default="0"/>
   <arg name = "start_yaw" default="3.14159265359"/> -->
-  <!-- classroom meta data END -->
+  <!-- ############################ CLASSROOM WORLD END ####################### -->
+  
+  <!-- ############################ AMAZON WORLD BEGIN ######################## -->
+  <!-- <arg name="world_file" default="$(find aws_robomaker_bookstore_world)/worlds/bookstore.world"/> -->
+  <!-- <arg name="world_file" default="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
+  <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/small_warehouse.world"/>
+  <!-- <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/> -->
+  <arg name = "start_x" default="0"/>
+  <arg name = "start_y" default="0"/>
+  <arg name = "start_z" default="0"/>
+  <arg name = "start_yaw" default="0"/>
+  <!-- ############################ AMAZON WORLD END ######################## -->
 
   <arg name="gui" default="true"/>
   <arg name="mode" default="localization"/>

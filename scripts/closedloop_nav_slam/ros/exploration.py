@@ -76,7 +76,6 @@ class Explore:
         gx = col * self.map_metadata.resolution + self.map_metadata.origin.position.x  # column * resolution + origin_x
         gy = row * self.map_metadata.resolution + self.map_metadata.origin.position.y  # row * resolution + origin_x
         self.goal = [gx, gy]
-        print(self.goal)
         
         if self.completion % 2 == 0:
             self.completion += 1
@@ -92,7 +91,7 @@ class Explore:
     def set_goal(self):
         """ Set goal position for move_base.
         """
-        rospy.logdebug("Setting goal")
+        rospy.loginfo("Setting goal ... ")
 
         # Create goal:
         goal = MoveBaseGoal()
@@ -103,7 +102,7 @@ class Explore:
         goal.target_pose.pose.position.x = self.goal[0]
         goal.target_pose.pose.position.y = self.goal[1]
         goal.target_pose.pose.orientation.w = 1.0
-        rospy.logdebug(f"goal: {goal.target_pose.pose.position.x, goal.target_pose.pose.position.y}")
+        rospy.loginfo(f"Goal: {goal.target_pose.pose.position.x, goal.target_pose.pose.position.y}")
         self.move_base.send_goal(goal, self.goal_status)
 
 
@@ -115,15 +114,15 @@ class Explore:
 
         # Goal reached
         if status == 3:
-            rospy.loginfo("Goal succeeded")
+            rospy.loginfo("Goal Succeeded.")
 
         # Goal aborted
         if status == 4:
-            rospy.loginfo("Goal aborted")
+            rospy.loginfo("Goal Aborted.")
 
         # Goal rejected
         if status == 5:
-            rospy.loginfo("Goal rejected")
+            rospy.loginfo("Goal Rejected.")
 
 
     def check_neighbors(self, data, map_size):
@@ -150,7 +149,7 @@ class Explore:
 
 def main():
     """ The main() function """
-    rospy.init_node('explore_node')
+    rospy.init_node('exploration_node')
     Explore()
     rospy.spin()
 
@@ -159,4 +158,4 @@ if __name__ == '__main__':
     try:
         main()
     except rospy.ROSInterruptException:
-        rospy.loginfo("ExploreNode exception caught !!!")
+        rospy.loginfo("ExplorationNode exception caught !!!")

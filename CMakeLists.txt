@@ -179,7 +179,7 @@ target_link_libraries(tf_to_pose_converter_node
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/closedloop_nav_slam/ros/explore.py
+  scripts/closedloop_nav_slam/ros/exploration.py
   scripts/closedloop_nav_slam/ros/ground_truth_odometry_publisher.py
   scripts/closedloop_nav_slam/ros/onekey.py
   scripts/closedloop_nav_slam/ros/waypoints_navigator.py
