@@ -4,7 +4,7 @@ echo "cmd to save slam_toolbox map (map && pose_graph) ..."
 
 if [ -z "$1" ]
 then
-    PREFIX=$(rospack find turtlebot_roboslam)/maps/slam_toolbox
+    PREFIX=$(rospack find closedloop_nav_slam)/configs/map/slam_toolbox
 else
     PREFIX=$1
 fi
