@@ -89,3 +89,14 @@ loops: 1 # Define the number of loops in a single trial.
 need_map_to_odom_tf: false # Whether needs an additional map_to_odom_tf publisher node. Most 2D laser methods in ros publish this tf inside their class. Some do not and need this publisher node.
 ```
 
+## Define Waypoints From A Known Map.
+```
+roslaunch closedloop_nav_slam gazebo_turtlebot.launch
+
+# Start waypoints saver
+rosrun closedloop_nav_slam waypoints_saver.py
+
+# Start rviz and pick 2D nav goal.
+rviz -d launch/closedloop_viz.rviz
+
+```
