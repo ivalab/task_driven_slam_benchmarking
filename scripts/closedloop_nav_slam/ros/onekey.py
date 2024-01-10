@@ -63,6 +63,16 @@ class CentralManager:
         rospy.loginfo("Task completion message received!")
         self._stop = True
 
+    def __set_move_base_params(self):
+        cmd_prefix = "rosparam set " + self._common_params["move_base_name"] + "/"
+        for s in ["xy", "yaw"]:
+            msg = s + "_goal_tolerance"
+            if msg not in self._common_params:
+                continue
+            cmd = f"{cmd_prefix}{msg} {self._common_params[msg]}"
+            print(cmd)
+            subprocess.call(cmd, shell=True)
+
     def run(self):
         for method_index, method_name in enumerate(self._common_params["slam_methods"]):
             method_dir = self._prefix / method_name
@@ -126,6 +136,11 @@ class CentralManager:
                     mb_node = MoveBaseNode(params)
                     mb_node.start()
                     time.sleep(10.0)
+
+                    # - Set move_base params
+                    print("Setting move_base params ...")
+                    self.__set_move_base_params()
+                    time.sleep(3.0)
 
                     # - Start robot
                     print("Start the robot ...")

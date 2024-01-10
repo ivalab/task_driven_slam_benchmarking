@@ -1,6 +1,6 @@
-image: aws_warehouse.pgm
+image: aws_small_house.pgm
 resolution: 0.050000
-origin: [-6.909836, -10.556966, 0.000000]
+origin: [-9.345198, -5.551361, 0.000000]
 negate: 0
 occupied_thresh: 0.65
 free_thresh: 0.196
