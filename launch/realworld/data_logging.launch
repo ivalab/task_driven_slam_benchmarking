@@ -1,0 +1,15 @@
+<launch>
+
+<arg name="path_data_logging" default = "/mnt/DATA/rosbags/turtlebot"/>
+<arg name="topics" default = "-a"/>
+
+<!-- initialize rosbag recording -->
+<node name="data_logging" type="record" pkg="rosbag" 
+    args="$(arg topics) -O $(arg path_data_logging).bag -x '(.*)theora(.*)|(.*)compressed(.*)'">
+</node>
+
+<!-- To depress error messages from realsense node when using rosbag record. -->
+<!-- https://github.com/IntelRealSense/realsense-ros/issues/315 -->
+<!-- rosbag record -o ~/ -a -x "(.*)theora(.*)|(.*)compressed(.*)" -->
+
+</launch>

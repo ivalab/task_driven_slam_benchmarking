@@ -1,0 +1,9 @@
+<launch>
+
+    <!-- laser -->
+    <include file="$(find rplidar_ros)/launch/rplidar_s2.launch"/>
+
+    <!-- camera -->
+    <include file="$(find closedloop_nav_slam)/launch/realsense_stereo_nodelet.launch"/>
+ 
+</launch>

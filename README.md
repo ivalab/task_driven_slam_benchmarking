@@ -37,6 +37,38 @@ This file provides steps to install and run ros packages on both gazebo and real
 
         # TODO
 
+
+## Run Real World Experiments with Turtlebot2.
+```bash
+source catkin_ws/devel/setup.bash
+
+# Start turtlebot bringup. Making sure /dev/kobuki exists (symlink).
+roslaunch closedloop_nav_slam base.launch
+
+# Start sensors.
+roslaunch rplidar_ros rplidar_s2.launch
+roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch # d435i
+# OR in one launch file.
+roslaunch closedloop_nav_slam sensor_drivers.launch
+
+# Start move base
+roslaunch closedloop_nav_slam move_base.launch
+
+# Start SLAM
+roslaunch slam_toolbox online_sync.launch
+
+# Drive the robot.
+roslaunch turtlebot_teleop logitech.launch
+# OR
+roslaunch turtlebot_teleop keyboard_teleop.launch
+# OR use rviz to send nav goal.
+rviz -d launch/closedloop_viz.rviz
+
+# Start rosbag record.
+# Please configure the topic names as args: topics:="$TOPIC_1 $TOPIC_2"
+roslaunch closedloop_nav_slam data_logging.launch path_data_logging:=$YOUR_RECORD_PATH
+```
+
 ## Run Simulation.
 ```bash
 roscore
