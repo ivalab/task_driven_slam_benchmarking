@@ -69,14 +69,25 @@ class WaypointsNavigatorNode(NodeBase):
 
     def compose_start_cmd(self) -> str:
         cmd = (
-            "roslaunch closedloop_nav_slam waypoints_navigator.launch" + " env:=" + self._params["env_name"]
-            + " path_file:=" + self._path_file + ".txt"
-            + " robot_init_pose:='" + " ".join(str(v) for v in self._params["robot_init_pose"]) + "'"
-            + " trials:=" + str(self._params["trials"])
-            + " output_dir:=" + self._output_dir
-            + " loops:=" + str(self._params["loops"])
-            + " gt_odom_topic:=" + self._params["gt_odom_topic"]
-            + " et_odom_topic:=" + self._params["et_odom_topic"]
+            "roslaunch closedloop_nav_slam waypoints_navigator.launch"
+            + " env:="
+            + self._params["env_name"]
+            + " path_file:="
+            + self._path_file
+            + ".txt"
+            + " robot_init_pose:='"
+            + " ".join(str(v) for v in self._params["robot_init_pose"])
+            + "'"
+            + " trials:="
+            + str(self._params["trials"])
+            + " output_dir:="
+            + self._output_dir
+            + " loops:="
+            + str(self._params["loops"])
+            + " gt_odom_topic:="
+            + self._params["gt_odom_topic"]
+            + " et_odom_topic:="
+            + self._params["et_odom_topic"]
         )
         return cmd
 
@@ -95,13 +106,22 @@ class WaypointsNavigatorNode(NodeBase):
 #     def reset(self) -> bool:
 #         raise NotImplementedError
 
+
 class MapToOdomPublisherNode(NodeBase):
     def __init__(self, params: Dict):
         names = ["map_to_odom_publisher"]
         super().__init__(names, params)
 
     def compose_start_cmd(self) -> str:
-        return "roslaunch closedloop_nav_slam map_to_odom_publisher.launch source_msg_topic:=" + self._params["et_pose_topic"] + " source_msg_parent_frame:=" + self._params["source_msg_parent_frame"] + " source_msg_child_frame:=" + self._params["source_msg_child_frame"]
+        return (
+            "roslaunch closedloop_nav_slam map_to_odom_publisher.launch source_msg_topic:="
+            + self._params["et_pose_topic"]
+            + " source_msg_parent_frame:="
+            + self._params["source_msg_parent_frame"]
+            + " source_msg_child_frame:="
+            + self._params["source_msg_child_frame"]
+        )
+
 
 # Unit test
 if __name__ == "__main__":

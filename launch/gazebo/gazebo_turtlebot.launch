@@ -3,12 +3,12 @@
   <arg name = "laser_type" default="laser"/> <!-- others can be "vlp16", "laser"-->
 
   <!-- ############################ TSRB WORLD BEGIN ####################### -->
-  <!-- <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
+  <arg name="world_file" default="$(find closedloop_nav_slam)/configs/world/fourth_floor_stixel.world"/>
   <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/>
   <arg name = "start_x" default="-40"/>
   <arg name = "start_y" default="14"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="0.0"/> -->
+  <arg name = "start_yaw" default="0.0"/>
   <!-- 34, -6, 0 (pi/2 = 1.5707963) -->
   <!-- ############################ TSRB WORLD END ####################### -->
 
@@ -24,12 +24,12 @@
   <!-- ############################ AMAZON WORLD BEGIN ######################## -->
   <!-- <arg name="world_file" default="$(find aws_robomaker_bookstore_world)/worlds/bookstore.world"/> -->
   <!-- <arg name="world_file" default="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
-  <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/small_warehouse.world"/>
+  <!-- <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/small_warehouse.world"/> -->
   <!-- <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_gazebo.yaml"/> -->
-  <arg name = "start_x" default="0"/>
+  <!-- <arg name = "start_x" default="0"/>
   <arg name = "start_y" default="0"/>
   <arg name = "start_z" default="0"/>
-  <arg name = "start_yaw" default="0"/>
+  <arg name = "start_yaw" default="0"/> -->
   <!-- ############################ AMAZON WORLD END ######################## -->
 
   <arg name="gui" default="true"/>

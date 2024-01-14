@@ -9,19 +9,25 @@
 @desc None
 """
 
-import os
 import subprocess
 import time
 from pathlib import Path
-import yaml
-from nav_msgs.msg import Path as PathMsg
 
 import numpy as np
 import rospy
-
-from closedloop_nav_slam.modular.node_module import MoveBaseNode, WaypointsNavigatorNode, MapToOdomPublisherNode
-from closedloop_nav_slam.modular.slam_module import SlamToolboxNode, MsfNode, CreateSlamNode
+import yaml
+from closedloop_nav_slam.modular.node_module import (
+    MapToOdomPublisherNode,
+    MoveBaseNode,
+    WaypointsNavigatorNode,
+)
+from closedloop_nav_slam.modular.slam_module import (
+    CreateSlamNode,
+    GroundTruthSlamNode,
+    MsfNode,
+)
 from closedloop_nav_slam.utils.path_definitions import *
+from nav_msgs.msg import Path as PathMsg
 
 
 class bcolors:
@@ -64,13 +70,15 @@ class CentralManager:
         self._stop = True
 
     def __set_move_base_params(self):
+        if "move_base_name" not in self._common_params:
+            return
         cmd_prefix = "rosparam set " + self._common_params["move_base_name"] + "/"
         for s in ["xy", "yaw"]:
             msg = s + "_goal_tolerance"
             if msg not in self._common_params:
                 continue
             cmd = f"{cmd_prefix}{msg} {self._common_params[msg]}"
-            print(cmd)
+            rospy.loginfo(cmd)
             subprocess.call(cmd, shell=True)
 
     def run(self):
@@ -81,10 +89,10 @@ class CentralManager:
             slam_params = self.__load_params(SLAM_SETTINGS_PATH / (method_name + ".yaml"))
             params.update(slam_params)
             for pfile in params["path_files"]:
-                print(f"Navigate path file: {pfile} ... ")
+                rospy.loginfo(f"Navigate path file: {pfile} ... ")
 
                 for trial in range(params["trials"]):
-                    print(f"Trial: {trial}")
+                    rospy.loginfo(f"Trial: {trial}")
 
                     path_dir = method_dir / pfile / ("trial" + str(trial))
                     path_dir.mkdir(parents=True, exist_ok=True)
@@ -92,20 +100,28 @@ class CentralManager:
                     # - Assuming gazebo is already started in a separated window.
 
                     # = Start waypoint navigator.
-                    print("Start waypoints navigator ...")
+                    rospy.loginfo("Start waypoints navigator ...")
                     wpt_nav_node = WaypointsNavigatorNode(params, pfile, str(path_dir))
                     wpt_nav_node.start()
                     time.sleep(5.0)
 
                     # - Reset everything.
-                    print("Reset everything ...")
+                    rospy.loginfo("Reset everything ...")
                     robot_bash_cmd = "bash " + str(UTILS_PATH) + "/start_robot.sh"
                     cmd_reset_robot = robot_bash_cmd + " 1 1"  # BUTTON STATE
                     subprocess.Popen(cmd_reset_robot, shell=True)
                     time.sleep(10.0)
 
+                    # - Start gt slam if enabled
+                    gt_slam_node = None
+                    if self._common_params["enable_gt_slam_method"]:
+                        rospy.loginfo("Start GT SLAM Method.")
+                        gt_slam_node = GroundTruthSlamNode(params)
+                        gt_slam_node.start()
+                        time.sleep(5.0)
+
                     # - Start slam
-                    print("Start SLAM ...")
+                    rospy.loginfo("Start SLAM ...")
                     slam_node = CreateSlamNode(params)
                     slam_node.start()
                     time.sleep(5.0)
@@ -113,7 +129,7 @@ class CentralManager:
                     # - Start msf
                     msf_node = None
                     if params["enable_msf"]:
-                        print("Start MSF ...")
+                        rospy.loginfo("Start MSF ...")
                         msf_node = MsfNode(params)
                         msf_node.start()
                         time.sleep(10.0)
@@ -126,24 +142,24 @@ class CentralManager:
                     # - Start map_to_odom_publisher if needed
                     m2o_tf_node = None
                     if params["need_map_to_odom_tf"]:
-                        print("Start map_to_odom_publisher")
+                        rospy.loginfo("Start map_to_odom_publisher")
                         m2o_tf_node = MapToOdomPublisherNode(params)
                         m2o_tf_node.start()
                         time.sleep(3.0)
 
                     # - Start move_base
-                    print("Start move_base ...")
+                    rospy.loginfo("Start move_base ...")
                     mb_node = MoveBaseNode(params)
                     mb_node.start()
                     time.sleep(10.0)
 
                     # - Set move_base params
-                    print("Setting move_base params ...")
+                    rospy.loginfo("Setting move_base params ...")
                     self.__set_move_base_params()
                     time.sleep(3.0)
 
                     # - Start robot
-                    print("Start the robot ...")
+                    rospy.loginfo("Start the robot ...")
                     cmd_start_robot = robot_bash_cmd + " 0 1"  # BUTTON STATE
                     subprocess.Popen(cmd_start_robot, shell=True)
 
@@ -159,19 +175,23 @@ class CentralManager:
                         rospy.loginfo("Stop requested by user.")
 
                     ## Stop nodes.
+                    if gt_slam_node:
+                        rospy.loginfo("Killing gt slam method ...")
+                        gt_slam_node.stop()
+                        time.sleep(3)
 
                     # - Stop navigation script
-                    print("Killing waypoints_navigator ...")
+                    rospy.loginfo("Killing waypoints_navigator ...")
                     wpt_nav_node.stop()
                     time.sleep(5)
 
                     # - Stop move_base
-                    print("Killing move_base ...")
+                    rospy.loginfo("Killing move_base ...")
                     mb_node.stop()
                     time.sleep(5)
 
                     # - Killing SLAM
-                    print("Killing SLAM ...")
+                    rospy.loginfo("Killing SLAM ...")
                     if m2o_tf_node:
                         m2o_tf_node.stop()
                         time.sleep(3.0)
@@ -181,14 +201,19 @@ class CentralManager:
                     slam_node.stop()
                     time.sleep(5)
 
-                    print(f"Done trial {trial}")
-                print(f"Done {pfile}")
-            print(f"Done {method_name}")
+                    rospy.loginfo(f"Done trial {trial}")
+                rospy.loginfo(f"Done {pfile}")
+            rospy.loginfo(f"Done {method_name}")
 
 
-if __name__ == "__main__":
+def main():
     try:
         cm = CentralManager(CONFIG_PATH / "config.yaml")
         cm.run()
     except rospy.ROSInterruptException:
         rospy.loginfo("CM exception caught !!!")
+
+
+if __name__ == "__main__":
+    # Run main.
+    main()

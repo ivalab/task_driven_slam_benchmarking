@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @file explore.py
 @author Yanwei Du (yanwei.du@gatech.edu)
 @date 12-13-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
-'''
+"""
 
 """
 This code is originally borrowed 
@@ -15,28 +15,28 @@ from https://github.com/YaelBenShalom/Turtlebot3-Navigation-with-SLAM/blob/maste
 with our own modifications.
 """
 
-import rospy
+import time
+from random import randrange
+
 import actionlib
 import numpy as np
+import rospy
 from actionlib_msgs.msg import GoalStatus
-from move_base_msgs.msg import MoveBaseFeedback, MoveBaseGoal, MoveBaseAction
-from nav_msgs.msg import OccupancyGrid, Odometry, MapMetaData
-from geometry_msgs.msg import Pose, Point, Quaternion
-from random import randrange
-import time
+from geometry_msgs.msg import Point, Pose, Quaternion
+from move_base_msgs.msg import MoveBaseAction, MoveBaseFeedback, MoveBaseGoal
+from nav_msgs.msg import MapMetaData, OccupancyGrid, Odometry
+
 
 class Explore:
-
     def __init__(self):
-        """ Initialize environment
-        """
+        """Initialize environment"""
         # Initialize rate:
         self.rate = rospy.Rate(1)
 
         # Simple Action Client:
-        self.move_base = actionlib.SimpleActionClient('move_base', MoveBaseAction)
+        self.move_base = actionlib.SimpleActionClient("move_base", MoveBaseAction)
         self.move_base.wait_for_server(rospy.Duration(5.0))
-        rospy.logdebug("move_base is ready") 
+        rospy.logdebug("move_base is ready")
 
         self.goal = []
         self.completion = 0
@@ -46,15 +46,14 @@ class Explore:
         self.map_frame = rospy.get_param("map_frame", "map")
         self.map = OccupancyGrid()
         self.map_metadata = None
-        self.sub_map = rospy.Subscriber('/map', OccupancyGrid, self.map_callback)
-        self.sub_map_metadata = rospy.Subscriber('/map_metadata', MapMetaData, self.map_metadata_callback)
-        self.sub_odom = rospy.Subscriber('/odom', Odometry, self.odom_callback)
+        self.sub_map = rospy.Subscriber("/map", OccupancyGrid, self.map_callback)
+        self.sub_map_metadata = rospy.Subscriber("/map_metadata", MapMetaData, self.map_metadata_callback)
+        self.sub_odom = rospy.Subscriber("/odom", Odometry, self.odom_callback)
         self.count = 0
         time.sleep(8)
 
-
     def map_callback(self, data):
-        """ Callback function for map subscriber.
+        """Callback function for map subscriber.
         Subscribes to /map to get the OccupancyGrid of the map.
         """
         if self.map_metadata is None:
@@ -69,14 +68,14 @@ class Explore:
             edges = self.check_neighbors(data, map_size)
             if self.map != -1 and self.map <= 0.2 and edges is True:
                 valid = True
-            
+
         row = map_size / self.map_metadata.width
         col = map_size % self.map_metadata.width
 
         gx = col * self.map_metadata.resolution + self.map_metadata.origin.position.x  # column * resolution + origin_x
         gy = row * self.map_metadata.resolution + self.map_metadata.origin.position.y  # row * resolution + origin_x
         self.goal = [gx, gy]
-        
+
         if self.completion % 2 == 0:
             self.completion += 1
             # Start the robot moving toward the goal
@@ -89,8 +88,7 @@ class Explore:
         self.pose = msg.pose.pose
 
     def set_goal(self):
-        """ Set goal position for move_base.
-        """
+        """Set goal position for move_base."""
         rospy.loginfo("Setting goal ... ")
 
         # Create goal:
@@ -105,9 +103,8 @@ class Explore:
         rospy.loginfo(f"Goal: {goal.target_pose.pose.position.x, goal.target_pose.pose.position.y}")
         self.move_base.send_goal(goal, self.goal_status)
 
-
     def goal_status(self, status, result):
-        """ Check the status of a goal - goal reached, aborted,
+        """Check the status of a goal - goal reached, aborted,
         or rejected.
         """
         self.completion += 1
@@ -124,10 +121,8 @@ class Explore:
         if status == 5:
             rospy.loginfo("Goal Rejected.")
 
-
     def check_neighbors(self, data, map_size):
-        """ Checks neighbors for random points on the map.
-        """
+        """Checks neighbors for random points on the map."""
         unknowns = 0
         obstacles = 0
 
@@ -148,13 +143,13 @@ class Explore:
 
 
 def main():
-    """ The main() function """
-    rospy.init_node('exploration_node')
+    """The main() function"""
+    rospy.init_node("exploration_node")
     Explore()
     rospy.spin()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         main()
     except rospy.ROSInterruptException:

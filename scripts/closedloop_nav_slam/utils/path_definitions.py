@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
-'''
+"""
 @file path_definitions.py
 @author Yanwei Du (yanwei.du@gatech.edu)
 @date 11-28-2023
 @version 1.0
 @license Copyright (c) 2023
 @desc None
-'''
+"""
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 SCRIPTS_PATH = Path(__file__).resolve().parent.parent
 UTILS_PATH = SCRIPTS_PATH / "utils"

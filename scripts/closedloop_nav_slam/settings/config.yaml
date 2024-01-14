@@ -1,6 +1,6 @@
 ## Common params.
-result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
-# result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
+# result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
+result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 vis: "false"
 test_type: "gazebo" # [gazebo, realworld]
 gt_odom_topic: "/ground_truth/odom"
@@ -10,23 +10,24 @@ gt_pose_topic: "/slam/pose"
 et_pose_topic: "/visual/pose"
 
 ## Waypoints navigator params.
-env_name: "tsrb_new.bak"
+env_name: "tsrb"
 robot_init_pose: [-40, 14, 0.0] # [34.0, -6.0, 0.0] # x, y, theta
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
 path_files: ["path0"]
-trials: 10
+trials: 1
 
 ## Move base params.
 # yaw_goal_tolerance: 0.1 # rad
-xy_goal_tolerance: .3 # meters
+xy_goal_tolerance: .1 # meters
 
 ## SLAM params.
 # params are stored in seperate .yaml files 
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["perfect_odometry"]
+slam_methods: ["hector_slam"]
+enable_gt_slam_method: true
 
 ## MSF params.
 # enable_msf: true

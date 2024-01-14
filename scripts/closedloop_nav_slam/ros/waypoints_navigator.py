@@ -35,7 +35,7 @@ import std_srvs.srv as std_srvs
 from actionlib_msgs.msg import GoalStatus
 from gazebo_msgs.msg import ModelState, ModelStates
 from gazebo_msgs.srv import SetModelState
-from geometry_msgs.msg import Pose, PoseStamped, PoseWithCovarianceStamped, PoseArray
+from geometry_msgs.msg import Pose, PoseArray, PoseStamped, PoseWithCovarianceStamped
 from kobuki_msgs.msg import BumperEvent, ButtonEvent, WheelDropEvent
 from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMsg
