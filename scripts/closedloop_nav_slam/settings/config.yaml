@@ -18,8 +18,9 @@ path_files: ["path0"]
 trials: 1
 
 ## Move base params.
-# yaw_goal_tolerance: 0.1 # rad
-xy_goal_tolerance: .1 # meters
+move_base_name: "/move_base/TebLocalPlannerROS" # No trailing of "/".
+yaw_goal_tolerance: 0.25 # rad
+xy_goal_tolerance: 0.1 # meters
 
 ## SLAM params.
 # params are stored in seperate .yaml files 
