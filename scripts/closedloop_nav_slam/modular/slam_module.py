@@ -36,6 +36,14 @@ class RobotOdometryNode(NodeBase):
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam robot_odometry.launch"
 
+class WheelOdometryNode(NodeBase):
+    def __init__(self, params: Dict):
+        names = ["wheel_odometry_publisher"]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        return "rosrun closedloop_nav_slam wheel_odometry_publisher.py"
+
 
 # 2D Laser SLAM
 class SlamToolboxNode(NodeBase):

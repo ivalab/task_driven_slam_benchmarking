@@ -100,3 +100,22 @@ rosrun closedloop_nav_slam waypoints_saver.py
 rviz -d launch/closedloop_viz.rviz
 
 ```
+
+## Issue Tracking.
+- How to disable odom_to_base tf from kobuki_gazebo?
+```bash
+cd ${YOUR_CATKIN_WS}/src/kobuki_ros/kobuki_desktop/kobuki_gazebo_plugins/src
+
+# Change line 166 of file gazebo_ros_kobuki_updates.cpp
+if (publish_tf_)
+# to
+if (false && publish_tf_)
+
+# Rebuild.
+catkin build -j16
+
+# Run new wheel odometry publisher.
+# It subscribes the gazebo odometry and publishes the disturbed (noise) wheel odometry.
+rosrun closedloop_nav_slam wheel_odometry_publisher.py
+
+```
