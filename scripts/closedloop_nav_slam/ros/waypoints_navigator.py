@@ -192,7 +192,9 @@ class NavSlamTest:
             p1 = xys[i, :]
             if i + 1 < len(xys):
                 p2 = xys[i + 1, :]
-            theta = np.arctan2(p2[1] - p0[1], p2[0] - p0[0])
+            # @TODO(yanwei) Either to compute a new theta or use the default one.
+            # theta = np.arctan2(p2[1] - p0[1], p2[0] - p0[0])
+            theta = xys[i, 2]
             goals.append([xys[i, 0], xys[i, 1], theta])
         return goals
 

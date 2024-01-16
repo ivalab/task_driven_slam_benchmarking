@@ -32,7 +32,7 @@
   <arg name = "start_yaw" default="0"/> -->
   <!-- ############################ AMAZON WORLD END ######################## -->
 
-  <arg name="gui" default="true"/>
+  <arg name="gui" default="false"/>
   <arg name="mode" default="localization"/>
 
 
