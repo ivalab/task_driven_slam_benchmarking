@@ -45,7 +45,18 @@ class EvoEvaluation:
         nav_errs = np.linalg.norm(wpts_errs[:, :2], axis=1)  # ignore orientation
         nav_rmse = np.sqrt(np.mean(nav_errs**2))
 
-        return NavSlamError(nav_errs, nav_rmse, est_errs, est_rmse, sr, wpts_errs)
+        # Compute est rmse against gt slam.
+        est_errs_gt_slam = None
+        est_rmse_gt_slam = None
+        if nav_slam_data.gt_slam_poses is not None:
+            traj_gt_slam = self.__convert_to_evo_format(nav_slam_data.gt_slam_poses)
+            traj_est = self.__convert_to_evo_format(nav_slam_data.est_poses)
+            traj_gt_slam, traj_est = sync.associate_trajectories(traj_gt_slam, traj_est)
+            ape_result = evo_ape(traj_gt_slam, traj_est, pose_relation=metrics.PoseRelation.translation_part)
+            est_rmse_gt_slam = ape_result.stats["rmse"]
+            est_errs_gt_slam = ape_result.np_arrays["error_array"]  # ["timestamps"]
+
+        return NavSlamError(nav_errs, nav_rmse, est_errs, est_rmse, sr, wpts_errs, est_errs_gt_slam, est_rmse_gt_slam)
 
     def __convert_to_evo_format(self, mat: np.ndarray) -> PoseTrajectory3D:
         stamps = mat[:, 0]  # n x 1

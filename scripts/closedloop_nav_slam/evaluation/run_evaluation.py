@@ -9,8 +9,6 @@
 @desc None
 """
 import logging
-import subprocess
-from datetime import datetime
 from pathlib import Path
 
 import yaml
@@ -21,59 +19,30 @@ from closedloop_nav_slam.evaluation.utils import (
     save_evaluation,
     compose_dir_path,
 )
-from closedloop_nav_slam.utils.path_definitions import *
+from closedloop_nav_slam.utils.path_definitions import (
+    SETTINGS_PATH,
+)
 
-# from closedloop_nav_slam.evaluation.visualization import Visualization
+EVALUATION_PATH = Path(__file__).resolve().parent
 
 
 def load_params(test_config_file: str, eval_config_file: str):
     """Load params"""
     params = None
-    with open(test_config_file, "r") as tf, open(eval_config_file, "r") as ef:
+    with open(test_config_file, encoding="utf-8") as tf, open(eval_config_file, encoding="utf-8") as ef:
         params = yaml.safe_load(tf)
         params.update(yaml.safe_load(ef))
     if params["save_to_result_dir"]:
-        params["output_dir"] = params["result_dir"]
+        params["output_dir"] = str(
+            Path(params["result_dir"]) / params["test_type"] / params["env_name"] / "evaluation")
     assert params
     return params
 
-
-def main(params):
-    prefix = compose_dir_path(params["output_dir"], params)
-    # Acquire evaluation data.
-    if params["load_evaluation"]:
-        # Load evaluation data.
-        logging.info("Load Evaluation ...")
-        methods = load_evaluation(prefix, params["method_list"])
-        logging.info("Load Evauation Done.")
-    else:
-        # Run evaluation.
-        logging.info("Run Evaluation ...")
-        evaluation = Evaluation(params)
-        methods = evaluation.run()
-        logging.info("Evaluation Done.\n")
-        # Save data.
-        if params["save_data"]:
-            logging.info("Save Evaluation ...")
-            save_evaluation(prefix, methods, params["overwrite_data"])
-            logging.info("Save Evaluation Done.")
-
-    # Run visualization.
-    logging.info("Run Visualization ...")
-    vis = Visualization(params, methods)
-    vis.run()
-    logging.info("Visualization Done.")
-    logging.info("Main Script Done.")
-
-
-if __name__ == "__main__":
-    # Load params.
-    test_config_file = SETTINGS_PATH / "config.yaml"
-    eval_config_file = EVALUATION_PATH / "config.yaml"
-    params = load_params(test_config_file, eval_config_file)
+def setup_logger(params):
+    """Setup logger"""
 
     # Create log dir if not exists
-    log_dir = Path(compose_dir_path(params["output_dir"], params))
+    log_dir = Path(params["output_dir"])
     log_dir.mkdir(parents=True, exist_ok=True)
 
     # Setup logger.
@@ -99,5 +68,44 @@ if __name__ == "__main__":
     # Logging params.
     logging.info(params)
 
-    # Run main.
-    main(params)
+def main():
+    """Main Script"""
+
+    # Load params.
+    test_config_file = SETTINGS_PATH / "config.yaml"
+    eval_config_file = EVALUATION_PATH / "config.yaml"
+    params = load_params(test_config_file, eval_config_file)
+
+    # Setup logger.
+    setup_logger(params)
+
+    # Acquire evaluation data.
+    if params["load_evaluation"]:
+        # Load evaluation data.
+        logging.info("Load Evaluation ...")
+        methods = load_evaluation(params["output_dir"], params["method_list"])
+        logging.info("Load Evauation Done.")
+    else:
+        # Run evaluation.
+        logging.info("Run Evaluation ...")
+        evaluation = Evaluation(params)
+        methods = evaluation.run()
+        logging.info("Evaluation Done.\n")
+        # Save data.
+        if params["save_data"]:
+            logging.info("Save Evaluation ...")
+            save_evaluation(params["output_dir"], methods, params["overwrite_data"])
+            logging.info("Save Evaluation Done.")
+
+    # Run visualization.
+    logging.info("Run Visualization ...")
+    vis = Visualization(params, methods)
+    vis.run()
+    logging.info("Visualization Done.")
+    logging.info("Main Script Done.")
+
+    # End
+
+
+if __name__ == "__main__":
+    main()

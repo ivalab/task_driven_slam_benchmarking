@@ -13,16 +13,16 @@ import subprocess
 from datetime import datetime
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 
+import logging
 import numpy as np
 import yaml
+from scipy.spatial.transform import Rotation
 from closedloop_nav_slam.evaluation.types import (
     NavSlamData,
-    NavSlamError,
     RobotNavigationData,
 )
-from scipy.spatial.transform import Rotation
 
 
 def yaw_from_quaternion(quat: np.ndarray) -> float:
@@ -54,14 +54,16 @@ def cvt_pose_vec2tf(pos_quat_vec: np.ndarray) -> np.ndarray:
 
 
 def load_params(filepath: Path):
+    """load parameters"""
     params = None
-    with open(filepath, "r") as f:
+    with open(filepath, encoding="utf-8") as f:
         params = yaml.safe_load(f)
     assert params
     return params
 
 
 def load_planned_waypoints(filename):
+    """load planned waypoints"""
     return np.loadtxt(filename, ndmin=2)
 
 
@@ -71,12 +73,14 @@ def load_nav_slam_data(
     robot_init_xytheta: np.ndarray = np.zeros((3)),
     compensate_map_offset: bool = False,
 ) -> Optional[NavSlamData]:
+    """load nav slam data"""
     # Compose files paths.
     act_poses_path = prefix_path / "act_poses.txt"
     est_poses_path = prefix_path / "est_poses.txt"
     est_slam_poses_path = prefix_path / "est_slam_poses.txt"
     planned_wpts_path = prefix_path / "planned_waypoints.txt"
     visited_wpts_path = prefix_path / "visited_waypoints.txt"
+    gt_slam_poses_path = prefix_path / "gt_slam_poses.txt"
 
     if (
         not act_poses_path.exists()
@@ -84,11 +88,13 @@ def load_nav_slam_data(
         or not planned_wpts_path.exists()
         or not visited_wpts_path.exists()
     ):
+        logging.error("Result file NOT exists.")
         return None
 
     # Deal with waypoints.
     planned_wpts = np.loadtxt(planned_wpts_path, ndmin=2)
     if planned_wpts.shape[0] <= 0:
+        logging.error("No active planned waypoints.")
         return None
 
     # We would like to skip the mapping data.
@@ -96,6 +102,7 @@ def load_nav_slam_data(
     start_timestamp, end_timestamp = find_localization_range(planned_wpts, visited_wpts, loops)
     visited_wpts = visited_wpts[(end_timestamp >= visited_wpts[:, 0]) & (visited_wpts[:, 0] >= start_timestamp), :]
     if visited_wpts.shape[0] <= 0:
+        logging.error("No visited waypoints.")
         return None
 
     # Load act(gt) and est pose.
@@ -110,6 +117,7 @@ def load_nav_slam_data(
     est_poses = est_poses[(end_timestamp >= est_poses[:, 0]) & (est_poses[:, 0] >= start_timestamp), :]
 
     if act_poses.shape[0] <= 0 or est_poses.shape[0] <= 0:
+        logging.error("No act(gt) or est poses.")
         return None
 
     # Find the robot actual pose at each waypoint.
@@ -122,13 +130,21 @@ def load_nav_slam_data(
         act_wpts.append(act_poses[index, [0, 1, 2]].tolist() + [yaw_from_quaternion(act_poses[index, -4:])])
 
     if len(act_wpts) <= 0:
+        logging.error("No act waypoints.")
         return None
 
     traj_length = compute_traj_length(act_poses)
     traj_duration = compute_traj_duration(act_poses)
 
     if traj_duration <= 0.0 or traj_length <= 0.0:
+        logging.error("Invalid traj duration or traj length.")
         return None
+
+    # Load gt slam poses.
+    gt_slam_poses = np.loadtxt(gt_slam_poses_path, ndmin=2) if gt_slam_poses_path.exists() else None
+    if compensate_map_offset:
+        gt_slam_poses[:, 1:] = compensate_offset(gt_slam_poses[:, 1:], robot_init_xytheta)
+    gt_slam_poses = gt_slam_poses[(end_timestamp >= gt_slam_poses[:, 0]) & (gt_slam_poses[:, 0] >= start_timestamp), :]
 
     # @TODO slam poses and extrinsics
     return NavSlamData(
@@ -140,6 +156,7 @@ def load_nav_slam_data(
         est_poses,
         traj_length,
         traj_duration,
+        gt_slam_poses,
     )
 
 
@@ -161,6 +178,7 @@ def find_localization_range(planned_wpts, gt_wpts, loops: int) -> Tuple[float, f
 
 
 def compensate_offset(pose_array: np.ndarray, xytheta: np.ndarray):
+    """Compensate pose offset."""
     wTm = np.eye(4)
     wTm[:3, :3] = Rotation.from_euler("z", xytheta[-1], degrees=False).as_matrix()
     wTm[:2, 3] = xytheta[:-1]
@@ -175,8 +193,10 @@ def compensate_offset(pose_array: np.ndarray, xytheta: np.ndarray):
     return out_array
 
 
-def save_evaluation(prefix: Path, methods: Dict[str, RobotNavigationData], overwrite: bool = True):
+def save_evaluation(prefix: str, methods: Dict[str, RobotNavigationData], overwrite: bool = True):
+    """Save evaluation."""
     # Create dir.
+    prefix = Path(prefix)
     prefix.mkdir(parents=True, exist_ok=True)
 
     for method_name, nav_data in methods.items():
@@ -189,10 +209,11 @@ def save_evaluation(prefix: Path, methods: Dict[str, RobotNavigationData], overw
         nav_data.save_to_file(filename)
 
 
-def load_evaluation(prefix: Path, method_list) -> Dict[str, RobotNavigationData]:
+def load_evaluation(prefix: str, method_list) -> Dict[str, RobotNavigationData]:
+    """Load evaluation."""
     methods = {}
     for method_name in method_list:
-        filename = str(prefix / (method_name + "_evaluation.pkl"))
+        filename = str(Path(prefix) / (method_name + "_evaluation.pkl"))
         assert os.path.exists(filename), f"{filename} is not existed"
         methods[method_name] = RobotNavigationData(method_name)
         methods[method_name].load_from_file(filename)
@@ -200,4 +221,5 @@ def load_evaluation(prefix: Path, method_list) -> Dict[str, RobotNavigationData]
 
 
 def compose_dir_path(dir_prefix, params):
+    """Compose dir path"""
     return Path(dir_prefix) / params["test_type"] / params["env_name"]

@@ -12,7 +12,7 @@
 import pickle
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -41,6 +41,8 @@ class NavSlamError:
     est_rmse: float
     success_rate: float  # len(actual_wpts) / len(planned_wpts)
     wpts_errs: np.ndarray  # len(wpts) * 3 (x, y, theta)
+    est_errs_gt_slam: Optional[np.ndarray] # len(frames) x 1
+    est_rmse_gt_slam: Optional[float]
 
 
 @dataclass
@@ -53,6 +55,7 @@ class NavSlamData:
     est_poses: np.ndarray
     traj_length: float  # meters
     traj_duration: float  # seconds
+    gt_slam_poses: Optional[np.ndarray]
 
 
 @dataclass
@@ -120,6 +123,8 @@ class RobotNavigationData:
             # Fill-in actual wpts from all the rounds.
             for round_data in experiment["rounds"]:
                 nav_data = round_data["nav_data"]
+                if nav_data is None:
+                    continue
                 act_wpts[nav_data.wpts_indices, :, round_data["round"]] = nav_data.act_wpts[:, 1:]
 
             accuracy, precision = self.compute_path_accuracy_and_precision(planned_wpts, act_wpts)

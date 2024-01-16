@@ -14,8 +14,6 @@ import logging
 from pathlib import Path
 from typing import Dict
 
-import numpy as np
-import yaml
 from closedloop_nav_slam.evaluation.evo_utils import EvoEvaluation
 from closedloop_nav_slam.evaluation.types import (
     NavSlamData,
@@ -27,7 +25,9 @@ from closedloop_nav_slam.evaluation.utils import (
     load_params,
     load_planned_waypoints,
 )
-from closedloop_nav_slam.utils.path_definitions import *
+from closedloop_nav_slam.utils.path_definitions import (
+    SLAM_SETTINGS_PATH,
+)
 
 
 class Evaluation:
@@ -52,7 +52,7 @@ class Evaluation:
                 )
                 # Loop over rounds.
                 for trial in range(self._params["trials"]):
-                    logging.info(f"Processing {method_name}, {pfile}, {trial} ...")
+                    logging.info(f"Processing {method_name}, {pfile}, trial{trial} ...")
                     prefix = pfile_dir / ("trial" + str(trial))
                     # Load nav slam data
                     nav_slam_data = load_nav_slam_data(
@@ -71,7 +71,7 @@ class Evaluation:
 
                     # Add result to method.
                     robot_nav_data.add_round(pfile, trial, nav_slam_data, nav_slam_error)
-                    logging.info(f"Done {method_name}, {pfile}, {trial} ...")
+                    logging.info(f"Done {method_name}, {pfile}, trial{trial} ...")
 
                 # Compute accuracy and precision
                 robot_nav_data.compute_accuracy_and_precision()

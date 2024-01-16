@@ -50,15 +50,18 @@ class Visualization:
         self._params = deepcopy(params)
         self._methods = methods
         self._colors = [plt.cm.jet(random.random()) for _ in range(50)]  # Generate random colors
-        self._output_dir = Path(compose_dir_path(self._params["output_dir"], self._params))
+        self._output_dir = Path(self._params["output_dir"]) / "figs"
         self._output_dir.mkdir(exist_ok=True, parents=True)
 
     def run(self):
+        # logging.info("plot trajectory ...")
         # self.__plot_trajectory()
         logging.info("plot waypoints errors ... ")
         self.__plot_waypoints_errors()
         logging.info("plot accuracy and precision ... ")
         self.__plot_accuracy_and_precision()
+        logging.info('plot estimation error against gt slam method ... ')
+        self.__plot_estimation_errors_gt_slam()
 
     def __plot_trajectory(self):
         # Loop over each method.
@@ -70,11 +73,16 @@ class Visualization:
                     nav_data = single_round_data["nav_data"]
                     nav_err = single_round_data["nav_err"]
 
+                    if nav_data is None or nav_err is None:
+                        continue
+
                     fig = plt.figure()
                     # actual traj.
                     plt.plot(nav_data.act_poses[:, 1], nav_data.act_poses[:, 2], color="g", label="actual")
                     # esti traj.
                     plt.plot(nav_data.est_poses[:, 1], nav_data.est_poses[:, 2], color="r", label="estimated")
+                    # gt slam traj if has
+                    plt.plot(nav_data.gt_slam_poses[:, 1], nav_data.gt_slam_poses[:, 2], color="y", label="gt slam")
                     # start point.
                     plt.plot(
                         nav_data.act_poses[0, 1],
@@ -87,7 +95,7 @@ class Visualization:
                     )
                     # planned waypoints.
                     for index, pt in enumerate(experiment["waypoints"]):
-                        plt.plot(pt[0], pt[1], color="y", marker="o", linestyle="None")
+                        plt.plot(pt[0], pt[1], color="g", marker="o", linestyle="None")
                         plt.text(pt[0], pt[1], "wpt " + str(index))
                     # actual waypoints.
                     for pt in nav_data.act_wpts:
@@ -99,9 +107,10 @@ class Visualization:
                     plt.ylabel("y(m)")
                     plt.legend()
                     if self._params["save_figs"]:
+                        fig_dir = self._output_dir / method_name / experiment['path_name']
+                        fig_dir.mkdir(exist_ok=True, parents=True)
                         plt.savefig(
-                            fname=self._output_dir
-                            / f"{method_name}_{experiment['path_name']}_round_{str(single_round_data['round'])}_trajectory.png",
+                            fname= fig_dir / f"round_{str(single_round_data['round'])}_trajectory.png",
                             dpi=fig.dpi,
                         )
                     plt.show(block=False)
@@ -117,6 +126,8 @@ class Visualization:
                 for single_round_data in experiment["rounds"]:
                     nav_data = single_round_data["nav_data"]
                     nav_err = single_round_data["nav_err"]
+                    if nav_data is None or nav_err is None:
+                        continue
                     for index, err in zip(nav_data.wpts_indices, nav_err.wpts_errs):
                         if index not in wpts_errs:
                             wpts_errs[index] = [err]
@@ -187,17 +198,21 @@ class Visualization:
         for method_name, robot_nav_data in self._methods.items():
             # Loop over each experiment (path).
             for experiment in robot_nav_data.data:
-                fig, axs = plt.subplots(2, 1)
+                fig, axs = plt.subplots(3, 1)
                 xdata = range(experiment["waypoints"].shape[0])
                 xlabels = ["wpt0"] + [str(i) for i in xdata[1:]]
                 axs[0].plot(xdata, experiment["accuracy"][:, 0] * 100.0)
                 axs[1].plot(xdata, experiment["precision"][:, 0] * 100.0)
-                axs[0].set_xticks(xdata)
-                axs[0].set_xticklabels(xlabels)
-                axs[1].set_xticks(xdata)
-                axs[1].set_xticklabels(xlabels)
+                wpts_sr = [s.success_rate * 100.0 for s in experiment["wpts_stats"]]
+                axs[2].plot(xdata, wpts_sr)
+                for ax_index in range(3):
+                    axs[ax_index].set_xticks(xdata)
+                    axs[ax_index].set_xticklabels(xlabels)
+                axs[2].set_ylim([0.0, 102.0])
                 axs[0].set_ylabel("accuracy (cm)")
                 axs[1].set_ylabel("precision (cm)")
+                axs[2].set_ylabel("success rate (%)")
+                axs[0].set_title(f"{method_name} \n Waypoints Accuracy & Precision")
                 # axs[0].legend()
                 # axs[1].legend()
 
@@ -214,6 +229,7 @@ class Visualization:
                 ax2.set_xlim([0.0, 100.0])
                 ax2.set_ylim([0.0, 100.0])
                 ax2.set_aspect("equal", adjustable="box")
+                ax2.set_title(f"{method_name} \n Accuracy & Precision")
                 ax2.legend()
 
                 if self._params["save_figs"]:
@@ -230,3 +246,53 @@ class Visualization:
                 plt.pause(1)
                 plt.close(fig)
                 plt.close(fig2)
+
+
+    def __plot_estimation_errors_gt_slam(self):
+        # Loop over each method.
+        for method_name, robot_nav_data in self._methods.items():
+            # Loop over each experiment (path).
+            for experiment in robot_nav_data.data:
+                rmses = []
+                rounds = []
+                for single_round_data in experiment["rounds"]:
+                    nav_data = single_round_data["nav_data"]
+                    nav_err = single_round_data["nav_err"]
+                    if nav_data is None or nav_err is None:
+                        continue
+                    else:
+                        rmses.append([nav_err.est_rmse, nav_err.est_rmse_gt_slam])
+                        rounds.append(single_round_data["round"])
+
+                rmses_arr = np.array(rmses)
+                fig = plt.figure()
+                ax = fig.add_subplot(211)
+                ax.set_title(f"{method_name} \n Ground Truth Comparison.")
+                positions = [1.0, 2.0]
+                vplot = ax.boxplot(rmses_arr, positions = positions, showmeans=True)
+                # for pc, color in zip(vplot['bodies'], ["g", "y"]):
+                #     pc.set_facecolor(color)
+                #     pc.set_edgecolor(color)
+                #     pc.set_alpha(0.5)
+                # vplot["cmeans"].set_color("black")
+                # vplot["cmedians"].set_color("r")
+                    
+                ax.set_xticks(positions)
+                ax.set_xticklabels(["GT", "slam_toolbox"])
+                ax.set_ylabel("RMSE (m)")
+
+                ax = fig.add_subplot(212)
+                ax.plot(rounds, rmses_arr[:, 0], label="GT", color="g")
+                ax.plot(rounds, rmses_arr[:, 1], label="slam_toolbox", color="y")
+                ax.set_ylabel("RMSE (m)")
+                ax.set_xlabel("Rounds")
+                ax.legend()
+
+                if self._params["save_figs"]:
+                    fig.savefig(
+                        fname=self._output_dir / f"{method_name}_{experiment['path_name']}_estimation_error.png",
+                        dpi=fig.dpi,
+                    )
+                plt.show(block=False)
+                plt.pause(1)
+                plt.close(fig)
