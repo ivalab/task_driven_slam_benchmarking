@@ -8,11 +8,11 @@
       <axis xyz="0 1 0" />
       <origin xyz="${laser_px} ${laser_py} ${laser_pz}" rpy="${laser_or} ${laser_op} ${laser_oy}"/>
       <parent link="${parent}"/>
-      <child link="laser_link"/>
+      <child link="laser"/>
     </joint>
 
     <!-- 2D Laser -->
-    <link name="laser_link">
+    <link name="laser">
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
