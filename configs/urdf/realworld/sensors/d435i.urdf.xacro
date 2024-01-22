@@ -22,14 +22,11 @@ aluminum peripherial evaluation case.
 -->
 <robot name="realsense2_camera" xmlns:xacro="http://www.ros.org/wiki/xacro">
   <xacro:arg name="name" default="camera" />
-  <xacro:arg name="topics_ns" default="realsense" />
   <xacro:arg name="use_nominal_extrinsics" default="true" />
-  <xacro:arg name="publish_pointcloud" default="false" />
-  <xacro:arg name="add_plug" default="false" />
   <xacro:include filename="$(find closedloop_nav_slam)/configs/urdf/turtlebot_properties_d435i.urdf.xacro"/>
   <xacro:include filename="$(find realsense2_description)/urdf/_d435i.urdf.xacro"/>
 
-  <xacro:sensor_d435i name="$(arg name)" topics_ns="$(arg topics_ns)" parent="base_link" use_nominal_extrinsics="$(arg use_nominal_extrinsics)" publish_pointcloud="$(arg publish_pointcloud)" add_plug="$(arg add_plug)">
+  <xacro:sensor_d435i name="$(arg name)" parent="base_link" use_nominal_extrinsics="$(arg use_nominal_extrinsics)">
     <origin xyz="${cam_px} ${cam_py} ${cam_pz}" rpy="${cam_or} ${cam_op} ${cam_oy}"/>
   </xacro:sensor_d435i>
 </robot>
