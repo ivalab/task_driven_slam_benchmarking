@@ -96,6 +96,6 @@
 # Sensor Drivers
 
 - git:
-    local-name: aws-robomaker-small-warehouse-world
+    local-name: rplidar_ros
     uri: 'https://github.com/ivaROS/rplidar_ros.git'
     version: master

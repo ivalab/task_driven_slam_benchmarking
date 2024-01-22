@@ -43,15 +43,15 @@ This file provides steps to install and run ros packages on both gazebo and real
 source catkin_ws/devel/setup.bash
 
 # Start turtlebot bringup. Making sure /dev/kobuki exists (symlink).
-roslaunch closedloop_nav_slam base.launch
+roslaunch closedloop_nav_slam base.launch serialport:=/dev/ttyUSB0
 
 # Start sensors.
-roslaunch rplidar_ros rplidar_s2.launch
-roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch # d435i
+roslaunch rplidar_ros rplidar_s2.launch serialport:=/dev/ttyUSB1
+roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true # d435i
 # OR in one launch file.
-roslaunch closedloop_nav_slam sensor_drivers.launch
+roslaunch closedloop_nav_slam sensor_drivers.launch serialport:=/dev/ttyUSB1 enable_depth:=true
 
-# Start move base
+# Start move base # nav_name:=teb 
 roslaunch closedloop_nav_slam move_base.launch
 
 # Start SLAM

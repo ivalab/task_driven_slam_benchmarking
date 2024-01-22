@@ -1,9 +1,15 @@
 <launch>
+    <arg name="enable_depth"        default="true"/>
+    <arg name="serialport"          default="/dev/ttyUSB1"/>
 
     <!-- laser -->
-    <include file="$(find rplidar_ros)/launch/rplidar_s2.launch"/>
+    <include file="$(find rplidar_ros)/launch/rplidar_s2.launch">
+        <arg name="serialport" value="$(arg serialport)" />
+    </include>
 
     <!-- camera -->
-    <include file="$(find closedloop_nav_slam)/launch/realsense_stereo_nodelet.launch"/>
+    <include file="$(find closedloop_nav_slam)/launch/realsense_stereo_nodelet.launch">
+        <arg name="enable_depth" value="$(arg enable_depth)" />
+    </include>
  
 </launch>
