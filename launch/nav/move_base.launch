@@ -5,10 +5,10 @@
 
   <!-- move_base -->
   <group if="$(eval arg('nav_name') == 'teb')">
-    <include file="$(find turtlebot_demo)/launch/turtlebot_teb_controller.launch"/>
+    <include file="$(find closedloop_nav_slam)/launch/nav/turtlebot_teb_controller.launch"/>
   </group>
  
-   <group if="$(eval arg('nav_name') == 'gpf')">
+  <group if="$(eval arg('nav_name') == 'gpf')">
     <include file="$(find slam_nav)/launch/nav_controller/turtlebot_switched_gpf_potential_gap_laser_ego_remote_controller.launch"/>
   </group>
  

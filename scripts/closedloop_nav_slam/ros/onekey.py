@@ -25,6 +25,7 @@ from closedloop_nav_slam.modular.slam_module import (
     CreateSlamNode,
     GroundTruthSlamNode,
     MsfNode,
+    WheelOdometryNode,
 )
 from closedloop_nav_slam.utils.path_definitions import *
 from nav_msgs.msg import Path as PathMsg
@@ -54,7 +55,7 @@ class CentralManager:
         self._prefix.mkdir(parents=True, exist_ok=True)
 
         # Ros node.
-        rospy.init_node("onekey_node", anonymous=True)
+        rospy.init_node("onekey_node")
         # We used this message signal to determine if a path has been completed.
         self._sub = rospy.Subscriber("/visited_waypoints", PathMsg, self.__path_callback)
         self._stop = False
@@ -80,6 +81,13 @@ class CentralManager:
             cmd = f"{cmd_prefix}{msg} {self._common_params[msg]}"
             rospy.loginfo(cmd)
             subprocess.call(cmd, shell=True)
+
+    def __save_map(self, slam_name: str, path_name: str, trial: int):
+        rospy.loginfo("Saving map ... ")
+        filename = slam_name + "_" + path_name + "_" + "trial" + str(trial) + "_" + time.strftime("%Y%m%d-%H%M%S")
+        cmd = f"rosrun map_server map_saver -f {filename} map:=/slam_map"
+        print(cmd)
+        subprocess.call(cmd, shell=True)
 
     def run(self):
         for method_index, method_name in enumerate(self._common_params["slam_methods"]):
@@ -158,6 +166,14 @@ class CentralManager:
                     self.__set_move_base_params()
                     time.sleep(3.0)
 
+                    # Start wheel odometry
+                    wo_node = None
+                    if params["enable_wheel_odometry"]:
+                        rospy.loginfo("start wo ...")
+                        wo_node = WheelOdometryNode(params)
+                        wo_node.start()
+                        time.sleep(1.0)
+
                     # - Start robot
                     rospy.loginfo("Start the robot ...")
                     cmd_start_robot = robot_bash_cmd + " 0 1"  # BUTTON STATE
@@ -174,6 +190,10 @@ class CentralManager:
                     if not self._stop:
                         rospy.loginfo("Stop requested by user.")
 
+                    ## Save map if requested
+                    if self._common_params["save_map"]:
+                        self.__save_map(method_name, pfile, trial)
+
                     ## Stop nodes.
                     if gt_slam_node:
                         rospy.loginfo("Killing gt slam method ...")
@@ -184,6 +204,12 @@ class CentralManager:
                     rospy.loginfo("Killing waypoints_navigator ...")
                     wpt_nav_node.stop()
                     time.sleep(5)
+
+                    # - Stop wheel odometry node
+                    if wo_node:
+                        rospy.loginfo("Killing wo ...")
+                        wo_node.stop()
+                        time.sleep(1)
 
                     # - Stop move_base
                     rospy.loginfo("Killing move_base ...")

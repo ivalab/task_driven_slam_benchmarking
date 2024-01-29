@@ -13,6 +13,6 @@ cd $ROS_WS
 source devel/setup.bash
 
 # Launch msckf with arguments $(num_feature) $(imu_type).
-LAUNCH_FILE="msckf_vio_gazebo_lmk${FEATURE_NUM}_mpu6000.launch output_prefix:=$TRACK_LOG_PATH slam_pose_topic:=$SLAM_POSE_TOPIC"
+LAUNCH_FILE="msckf_vio_gazebo_lmk${FEATURE_NUM}_mpu6000_nav_slam.launch output_prefix:=$TRACK_LOG_PATH slam_pose_topic:=$SLAM_POSE_TOPIC"
 echo $LAUNCH_FILE
 roslaunch msckf_vio $LAUNCH_FILE

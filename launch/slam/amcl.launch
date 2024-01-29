@@ -51,7 +51,7 @@
 
   </node>
 
-  <node name="slam_map_server" pkg="map_server" type="map_server" args="$(find turtlebot_roboslam)/maps/slam_toolbox/map_2023-09-12-16:27:54.yaml" required="true">
+  <node name="slam_map_server" pkg="map_server" type="map_server" args="/mnt/DATA/rosbags/cl_nav_slam_test/gazebo/tsrb/maps/slam_toolbox_path0_trial2_20240125-135316.yaml" required="true">
     <param name="frame_id" value="slam_map"/>
     <remap from="map" to="/slam_map"/>
     <remap from="map_metadata" to="/slam_map_metadata"/>

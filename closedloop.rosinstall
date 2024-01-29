@@ -41,61 +41,61 @@
 
 - git:
     local-name: ethzasl_msf
-    uri: 'https://github.com/ivalab/ethzasl_msf.git'
+    uri: https://github.com/ivalab/ethzasl_msf.git
     version: master
 - git:
     local-name: gflags_catkin
-    uri: 'https://github.com/ethz-asl/gflags_catkin.git'
+    uri: https://github.com/ethz-asl/gflags_catkin.git
     version: master
 - git:
     local-name: glog_catkin
-    uri: 'https://github.com/ethz-asl/glog_catkin.git'
+    uri: https://github.com/ethz-asl/glog_catkin.git
     version: master
 - git:
     local-name: catkin_simple
-    uri: 'https://github.com/catkin/catkin_simple.git'
+    uri: https://github.com/catkin/catkin_simple.git
     version: master
 
 # Move-base(Navigation-TebPlanner)
 
 - git:
     local-name: turtlebot_demo
-    uri: 'https://github.gatech.edu/ivabots/turtlebot_demo.git'
+    uri: https://github.gatech.edu/ivabots/turtlebot_demo.git
     version: noetic/roboslam
 
 # Gazebo Tools
 
 - git:
     local-name: gazebo_fake_localization
-    uri: 'https://github.com/TurtlebotAdventures/gazebo_fake_localization.git'
+    uri: https://github.com/TurtlebotAdventures/gazebo_fake_localization.git
     version: more_trans_offset
 - git:
     local-name: velodyne_simulator
-    uri: 'https://github.com/ivaROS/velodyne_simulator.git'
+    uri: https://github.com/ivaROS/velodyne_simulator.git
     version: master
 - git:
     local-name: realsense_gazebo_plugin
-    uri: 'https://github.com/ivaROS/realsense_gazebo_plugin.git'
+    uri: https://github.com/ivaROS/realsense_gazebo_plugin.git
     version: noetic-devel
 
 # Amazon Worlds
 
 - git:
     local-name: aws-robomaker-small-warehouse-world
-    uri: 'https://github.com/aws-robotics/aws-robomaker-small-bookstore-world.git'
+    uri: https://github.com/aws-robotics/aws-robomaker-small-bookstore-world.git
     version: master
 - git:
     local-name: aws-robomaker-small-warehouse-world
-    uri: 'https://github.com/aws-robotics/aws-robomaker-small-house-world.git'
+    uri: https://github.com/aws-robotics/aws-robomaker-small-house-world.git
     version: master
 - git:
-    local-name: src/aws-robomaker-small-warehouse-world
-    uri: 'https://github.com/aws-robotics/aws-robomaker-small-warehouse-world.git'
+    local-name: aws-robomaker-small-warehouse-world
+    uri: https://github.com/aws-robotics/aws-robomaker-small-warehouse-world.git
     version: master
 
 # Sensor Drivers
 
 - git:
     local-name: rplidar_ros
-    uri: 'https://github.com/ivaROS/rplidar_ros.git'
+    uri: https://github.com/ivaROS/rplidar_ros.git
     version: master

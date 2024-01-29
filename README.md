@@ -7,11 +7,13 @@ This file provides steps to install and run ros packages on both gazebo and real
         
         sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall
 
-2. Install sensor drivers (for real robot testing).
+2. Install sensor drivers (for real robot testing) and other libs.
 
         sudo apt install ros-noetic-urg-node # hokuyo laser
         sudo apt install ros-noetic-realsense2-camera # realsense camera
         sudo apt install ros-noetic-realsense2-description # camera urdf
+        sudo apt install ros-noetic-teb-local-planner
+        sudo apt install ros-noetic-sparse-bundle-adjustment
 
 3. Initialize workspace.
 

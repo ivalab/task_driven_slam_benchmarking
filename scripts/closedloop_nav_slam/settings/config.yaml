@@ -1,6 +1,6 @@
 ## Common params.
-# result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
-result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
+result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
+# result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 vis: "false"
 test_type: "gazebo" # [gazebo, realworld]
 gt_odom_topic: "/ground_truth/odom"
@@ -15,7 +15,7 @@ robot_init_pose: [-40, 14, 0.0] # [34.0, -6.0, 0.0] # x, y, theta
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
 path_files: ["path0"]
-trials: 1
+trials: 20
 
 ## Move base params.
 move_base_name: "/move_base/TebLocalPlannerROS" # No trailing of "/".
@@ -27,8 +27,10 @@ xy_goal_tolerance: 0.1 # meters
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["hector_slam"]
+slam_methods: ["perfect_odometry"]
 enable_gt_slam_method: true
+enable_wheel_odometry: false # For simulation only!
+save_map: false
 
 ## MSF params.
 # enable_msf: true
