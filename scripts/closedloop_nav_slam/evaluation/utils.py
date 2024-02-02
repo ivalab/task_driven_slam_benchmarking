@@ -107,7 +107,7 @@ def load_nav_slam_data(
 
     # Load act(gt) and est pose.
     act_poses = np.loadtxt(act_poses_path, ndmin=2)
-    if est_poses_path.exists():
+    if False and est_poses_path.exists():
         est_poses = np.loadtxt(est_poses_path, ndmin=2)
     else:
         est_poses = np.loadtxt(est_slam_poses_path, ndmin=2)
@@ -141,10 +141,12 @@ def load_nav_slam_data(
         return None
 
     # Load gt slam poses.
-    gt_slam_poses = np.loadtxt(gt_slam_poses_path, ndmin=2) if gt_slam_poses_path.exists() else None
-    if compensate_map_offset:
-        gt_slam_poses[:, 1:] = compensate_offset(gt_slam_poses[:, 1:], robot_init_xytheta)
-    gt_slam_poses = gt_slam_poses[(end_timestamp >= gt_slam_poses[:, 0]) & (gt_slam_poses[:, 0] >= start_timestamp), :]
+    gt_slam_poses = None
+    if gt_slam_poses_path.exists():
+        gt_slam_poses = np.loadtxt(gt_slam_poses_path, ndmin=2) if gt_slam_poses_path.exists() else None
+        if compensate_map_offset:
+            gt_slam_poses[:, 1:] = compensate_offset(gt_slam_poses[:, 1:], robot_init_xytheta)
+        gt_slam_poses = gt_slam_poses[(end_timestamp >= gt_slam_poses[:, 0]) & (gt_slam_poses[:, 0] >= start_timestamp), :]
 
     # @TODO slam poses and extrinsics
     return NavSlamData(
@@ -223,3 +225,52 @@ def load_evaluation(prefix: str, method_list) -> Dict[str, RobotNavigationData]:
 def compose_dir_path(dir_prefix, params):
     """Compose dir path"""
     return Path(dir_prefix) / params["test_type"] / params["env_name"]
+
+
+def compute_the_closest_square_root_num(num: int):
+    return num
+
+def compute_weighted_accuracy_and_precision(planned_wpts, act_wpts):
+    assert planned_wpts.shape[0] > 0 and planned_wpts.shape[1] == 3
+    assert act_wpts.shape[0] == planned_wpts.shape[0] and act_wpts.shape[1] == 3 and act_wpts.shape[2] > 1
+
+    rounds = act_wpts.shape[2]
+    accuracy = np.full((rounds - 1, 2), np.nan)
+    precision = np.full((rounds - 1, 2), np.nan)
+
+    for round_num in range(2, rounds+1):
+        index = round_num - 2
+        weights = 1.0 / np.sum(~np.isnan(act_wpts[:, 0, :round_num]), axis=-1)
+        weights[np.isinf(weights)] = np.nan
+        weights /= np.nansum(weights)
+        
+        # accuracy[index, 0] = np.nansum(np.linalg.norm(wpt_mean[:, :2] - planned_wpts[:, :2], axis=-1) * weights)
+        # accuracy[index, 1] = np.nansum(np.abs(wpt_mean[:, -1] - planned_wpts[:, -1]) * weights)
+
+        accuracy[index, 0] = np.nansum(
+            np.nanmean(
+                np.linalg.norm(
+                    act_wpts[:, :2, :round_num] - planned_wpts[:, :2, None], axis=1), axis=-1) * weights)
+        accuracy[index, 1] = np.nansum(
+            np.nanmean(
+                np.abs(
+                    act_wpts[:, -1, :round_num] - planned_wpts[:, -1, None]), axis=-1) * weights)
+
+        # Compute precision
+        wpt_mean = np.nanmean(act_wpts[:, :, :round_num], axis=-1)
+        std_xy = np.sqrt(
+            np.nanmean(
+                np.sum(
+                    (act_wpts[:, :2, :round_num] - wpt_mean[:, :2, None])**2, axis=1), axis=-1))
+        std_theta = np.nanstd(act_wpts[:, -1, :round_num] - wpt_mean[:, -1, None])
+        # weights = 1.0 / np.sum(~np.isnan(std_xy), axis=-1)
+        # print(std_xy)
+        # print(weights)
+        # weights[np.isinf(weights)] = np.nan
+        # weights /= np.nansum(weights)
+        # Position(xy)
+        precision[index, 0] = np.nansum(std_xy * weights)
+        # Angle(theta)
+        precision[index, 1] = np.nansum(std_theta * weights)
+
+    return accuracy, precision

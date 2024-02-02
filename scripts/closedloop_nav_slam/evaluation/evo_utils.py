@@ -10,6 +10,7 @@
 """
 
 
+import logging
 import numpy as np
 from closedloop_nav_slam.evaluation.types import NavSlamData, NavSlamError
 from evo.core import metrics, sync
@@ -34,6 +35,7 @@ class EvoEvaluation:
 
         # traj_method.align_origin(traj_ref)
         # Call APE
+        logging.info("Evaluate APE of GT and EST SLAM poses.")
         ape_result = evo_ape(traj_act, traj_est, pose_relation=metrics.PoseRelation.translation_part)
         est_rmse = ape_result.stats["rmse"]
         est_errs = ape_result.np_arrays["error_array"]  # ["timestamps"]
@@ -49,9 +51,10 @@ class EvoEvaluation:
         est_errs_gt_slam = None
         est_rmse_gt_slam = None
         if nav_slam_data.gt_slam_poses is not None:
+            logging.info("Evaluate APE of GT SLAM and EST SLAM poses.")
             traj_gt_slam = self.__convert_to_evo_format(nav_slam_data.gt_slam_poses)
             traj_est = self.__convert_to_evo_format(nav_slam_data.est_poses)
-            traj_gt_slam, traj_est = sync.associate_trajectories(traj_gt_slam, traj_est)
+            traj_gt_slam, traj_est = sync.associate_trajectories(traj_gt_slam, traj_est, 0.02)
             ape_result = evo_ape(traj_gt_slam, traj_est, pose_relation=metrics.PoseRelation.translation_part)
             est_rmse_gt_slam = ape_result.stats["rmse"]
             est_errs_gt_slam = ape_result.np_arrays["error_array"]  # ["timestamps"]

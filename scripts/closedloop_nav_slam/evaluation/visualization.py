@@ -16,6 +16,7 @@ from copy import deepcopy
 from closedloop_nav_slam.evaluation.utils import (
     RobotNavigationData,
     compose_dir_path,
+    compute_weighted_accuracy_and_precision,
 )
 
 from typing import List, Dict
@@ -54,14 +55,16 @@ class Visualization:
         self._output_dir.mkdir(exist_ok=True, parents=True)
 
     def run(self):
-        # logging.info("plot trajectory ...")
-        # self.__plot_trajectory()
+        logging.info("plot trajectory ...")
+        self.__plot_trajectory()
         logging.info("plot waypoints errors ... ")
         self.__plot_waypoints_errors()
         logging.info("plot accuracy and precision ... ")
         self.__plot_accuracy_and_precision()
         logging.info('plot estimation error against gt slam method ... ')
         self.__plot_estimation_errors_gt_slam()
+        logging.info('plot weighted accuracy and precision ... ')
+        self.__plot_accuracy_and_precision_against_rounds()
 
     def __plot_trajectory(self):
         # Loop over each method.
@@ -82,7 +85,8 @@ class Visualization:
                     # esti traj.
                     plt.plot(nav_data.est_poses[:, 1], nav_data.est_poses[:, 2], color="r", label="estimated")
                     # gt slam traj if has
-                    plt.plot(nav_data.gt_slam_poses[:, 1], nav_data.gt_slam_poses[:, 2], color="y", label="gt slam")
+                    if nav_data.gt_slam_poses is not None:
+                        plt.plot(nav_data.gt_slam_poses[:, 1], nav_data.gt_slam_poses[:, 2], color="y", label="gt slam")
                     # start point.
                     plt.plot(
                         nav_data.act_poses[0, 1],
@@ -101,7 +105,7 @@ class Visualization:
                     for pt in nav_data.act_wpts:
                         plt.scatter(pt[1], pt[2], s=80, facecolors="none", edgecolors="r")
                     plt.title(
-                        f"{method_name} \n trajectory length {nav_data.traj_length:.2f} m, trajectory_duration {nav_data.traj_duration:.2f} s \n est rmse {nav_err.est_rmse:.2f} m, nav rmse {nav_err.nav_rmse:.2f} m"
+                        f"{method_name} \n trajectory length {nav_data.traj_length:.2f} m, trajectory_duration {nav_data.traj_duration:.2f} s \n est rmse {nav_err.est_rmse:.2f} m, nav rmse {nav_err.nav_rmse:.2f} m, completion {nav_err.completion:.2f}"
                     )
                     plt.xlabel("x(m)")
                     plt.ylabel("y(m)")
@@ -139,11 +143,12 @@ class Visualization:
                 max_abs_theta_err = 0.0
                 for index, wpt_errs in wpts_errs.items():
                     xy_err, theta_err = self.__draw_waypoints_errors(
-                        np.array(wpt_errs), ax, color=self._colors[index], unit="cm"
+                        np.array(wpt_errs), ax, color="k", unit="cm", markersize=1
                     )
                     max_abs_xy_err = max(max_abs_xy_err, xy_err)
                     max_abs_theta_err = max(max_abs_theta_err, theta_err)
                 self.__draw_navigation_control_tolerance(ax)
+                max_abs_xy_err = max(self._params["xy_goal_tolerance"] * 100.0, max_abs_xy_err)
                 max_abs_xy_err *= 1.1
                 ax.set_xlim([-max_abs_xy_err, max_abs_xy_err])
                 ax.set_ylim([-max_abs_xy_err, max_abs_xy_err])
@@ -161,7 +166,47 @@ class Visualization:
                 plt.pause(1)
                 plt.close()
 
-    def __draw_waypoints_errors(self, wpt_errs: np.ndarray, ax, color, marker="o", unit="m"):
+        # Plot all methods to a single plot.
+        # Loop over each method.
+        fig = plt.figure()
+        ax = plt.gca()
+        max_abs_xy_err = 0.0
+        max_abs_theta_err = 0.0
+        for method_index, (method_name, robot_nav_data) in enumerate(self._methods.items()):
+            all_wpts_errs = []
+            # Loop over each experiment (path).
+            for experiment in robot_nav_data.data:
+                for single_round_data in experiment["rounds"]:
+                    nav_data = single_round_data["nav_data"]
+                    nav_err = single_round_data["nav_err"]
+                    if nav_data is None or nav_err is None:
+                        continue
+                    all_wpts_errs.append(nav_err.wpts_errs)
+            xy_err, theta_err = self.__draw_waypoints_errors(
+                np.vstack(all_wpts_errs), ax, color=Visualization.COLORS[method_index], markersize=1, unit="cm", label=method_name
+            )
+            max_abs_xy_err = max(max_abs_xy_err, xy_err)
+            max_abs_theta_err = max(max_abs_theta_err, theta_err)
+        self.__draw_navigation_control_tolerance(ax)
+        max_abs_xy_err = max(self._params["xy_goal_tolerance"] * 100.0, max_abs_xy_err)
+        max_abs_xy_err *= 1.1
+        ax.set_xlim([-max_abs_xy_err, max_abs_xy_err])
+        ax.set_ylim([-max_abs_xy_err, max_abs_xy_err])
+        ax.set_title("Waypoint navigation position errors")
+        ax.set_xlabel("x(cm)")
+        ax.set_ylabel("y(cm)")
+        ax.set_aspect("equal", adjustable="box")
+        ax.legend()
+        if self._params["save_figs"]:
+            plt.savefig(
+                fname=self._output_dir / f"{experiment['path_name']}_waypoints_errors.png",
+                dpi=fig.dpi,
+            )
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
+
+    def __draw_waypoints_errors(self, wpt_errs: np.ndarray, ax, color, markersize=5, marker="o", unit="m", label=None):
         assert isinstance(wpt_errs, np.ndarray)
         assert wpt_errs.shape[0] > 0
         assert wpt_errs.shape[1] == 3
@@ -170,7 +215,7 @@ class Visualization:
         theta_errs = wpt_errs[:, 2]
         max_abs_xy_err = np.max(np.abs(xy_errs))
         max_abs_theta_err = np.max(np.abs(theta_errs))
-        ax.plot(xy_errs[:, 0], xy_errs[:, 1], color=color, marker=marker, markersize=5, linestyle="None")
+        ax.plot(xy_errs[:, 0], xy_errs[:, 1], color=color, marker=marker, markersize=markersize, linestyle="None", label=label)
         if xy_errs.shape[0] >= 3:
             hull = ConvexHull(xy_errs)
             for simplex in hull.simplices:
@@ -179,7 +224,7 @@ class Visualization:
                     xy_errs[simplex, 1],
                     color=color,
                     linestyle="dashdot",
-                    markersize=0.5,
+                    linewidth=0.5,
                     markeredgecolor="none",
                 )
         return max_abs_xy_err, max_abs_theta_err
@@ -247,6 +292,62 @@ class Visualization:
                 plt.close(fig)
                 plt.close(fig2)
 
+        # Plot all methods on the same plot.
+        # Loop over each method.
+        fig = plt.figure(figsize=(10, 8))
+        ax = fig.add_subplot(111)
+        for method_index, (method_name, robot_nav_data) in enumerate(self._methods.items()):
+            # Loop over each experiment (path).
+            for experiment in robot_nav_data.data:
+                ax.plot(
+                    experiment["accuracy"][:, 0] * 100.0,
+                    experiment["precision"][:, 0] * 100.0,
+                    marker="o",
+                    linestyle="none",
+                    label=method_name,
+                    color=Visualization.COLORS[method_index],
+                )
+
+        # Plot a precision==accuracy boundary
+        xx = np.arange(0.0, 110.0)
+        ax.plot(xx, xx, linestyle="dashed", linewidth=1, color="r")
+        ax.set_xlabel("accuracy (cm)")
+        ax.set_ylabel("precision (cm)")
+        ax.set_xlim([0.0, 110.0])
+        ax.set_ylim([0.0, 110.0])
+        # ax.set_aspect("equal", adjustable="box")
+        ax.set_title("Accuracy & Precision")
+        ax.legend()
+        # ax.grid(False)
+
+        # Plot a second axis
+        # Set scond x-axis
+        ax2 = ax.twiny()
+        # ax2.xaxis.set_ticks_position("bottom")
+        # ax2.xaxis.set_label_position("bottom")
+        # ax2.spines["bottom"].set_position(("axes", -0.35))
+        # ax2.set_frame_on(True)
+        # ax2.patch.set_visible(False)
+        # for sp in ax2.spines.values():
+        #     sp.set_visible(False)
+        # ax2.spines["bottom"].set_visible(True)
+        newlabel = range(4)
+        newpos = [i * 35.4 for i in newlabel] # Dim of turtlebot2 in cm
+        ax2.set_xticks(newpos)
+        ax2.set_xticklabels(newlabel)
+        ax2.set_xlabel("Metric as Turtlebot2 Size (354mm)")
+        ax2.set_xlim(ax.get_xlim())
+        ax2.grid(False)
+
+        if self._params["save_figs"]:
+            fig.savefig(
+                fname=self._output_dir / f"{experiment['path_name']}_accuracy_precision.png",
+                dpi=fig.dpi,
+            )
+
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)
 
     def __plot_estimation_errors_gt_slam(self):
         # Loop over each method.
@@ -258,12 +359,13 @@ class Visualization:
                 for single_round_data in experiment["rounds"]:
                     nav_data = single_round_data["nav_data"]
                     nav_err = single_round_data["nav_err"]
-                    if nav_data is None or nav_err is None:
+                    if nav_data is None or nav_data.gt_slam_poses is None or nav_err is None:
                         continue
                     else:
                         rmses.append([nav_err.est_rmse, nav_err.est_rmse_gt_slam])
                         rounds.append(single_round_data["round"])
-
+                if len(rmses) == 0:
+                    continue
                 rmses_arr = np.array(rmses)
                 fig = plt.figure()
                 ax = fig.add_subplot(211)
@@ -286,6 +388,7 @@ class Visualization:
                 ax.plot(rounds, rmses_arr[:, 1], label="slam_toolbox", color="y")
                 ax.set_ylabel("RMSE (m)")
                 ax.set_xlabel("Rounds")
+                ax.set_xticks(rounds)
                 ax.legend()
 
                 if self._params["save_figs"]:
@@ -296,3 +399,46 @@ class Visualization:
                 plt.show(block=False)
                 plt.pause(1)
                 plt.close(fig)
+
+    def __plot_accuracy_and_precision_against_rounds(self):
+        fig, axs = plt.subplots(2, 1)
+        # Loop over each method.
+        for method_index, (method_name, robot_nav_data) in enumerate(self._methods.items()):
+            # Loop over each experiment (path).
+            for experiment in robot_nav_data.data:
+                planned_wpts = experiment["waypoints"]
+                act_wpts = np.full(experiment["waypoints"].shape + (len(experiment["rounds"]),), np.nan)
+                rounds = 0
+                # Fill-in actual wpts from all the rounds.
+                for round_data in experiment["rounds"]:
+                    rounds += 1
+                    nav_data = round_data["nav_data"]
+                    if nav_data is None:
+                        continue
+                    act_wpts[nav_data.wpts_indices, :, round_data["round"]] = nav_data.act_wpts[:, 1:]
+
+                accuracy, precision = compute_weighted_accuracy_and_precision(planned_wpts, act_wpts)
+
+                xdata = range(2, rounds+1)
+                axs[0].plot(xdata, accuracy[:, 0] * 100.0, color=Visualization.COLORS[method_index], label=method_name)
+                axs[1].plot(xdata, precision[:, 0] * 100.0, color=Visualization.COLORS[method_index], label=method_name)
+                axs[0].set_xticks(xdata)
+                axs[1].set_xticks(xdata)
+                axs[0].set_ylabel("accuracy (cm)")
+                axs[1].set_ylabel("precision (cm)")
+                axs[0].set_title(f"Accuracy & Precision V.S. Rounds")
+                axs[1].set_xlabel("rounds")
+                axs[0].set_ylim([0, 100])
+                axs[1].set_ylim([0, 50])
+                axs[0].legend()
+                axs[1].legend()
+
+        if self._params["save_figs"]:
+            fig.savefig(
+                fname=self._output_dir / f"{experiment['path_name']}_accuracy_precision_rounds.png",
+                dpi=fig.dpi,
+            )
+
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close(fig)

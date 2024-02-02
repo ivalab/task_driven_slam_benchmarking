@@ -39,7 +39,7 @@ class NavSlamError:
     nav_rmse: float
     est_errs: np.ndarray  # len(frames) x 1
     est_rmse: float
-    success_rate: float  # len(actual_wpts) / len(planned_wpts)
+    completion: float  # len(actual_wpts) / len(planned_wpts)
     wpts_errs: np.ndarray  # len(wpts) * 3 (x, y, theta)
     est_errs_gt_slam: Optional[np.ndarray] # len(frames) x 1
     est_rmse_gt_slam: Optional[float]
@@ -149,19 +149,33 @@ class RobotNavigationData:
         accuracy = np.full((act_wpts.shape[0], 2), np.nan)
         precision = np.full((act_wpts.shape[0], 2), np.nan)
 
-        # Compute accuracy
-        # Position(xy)
-        accuracy[:, 0] = np.nanmean(np.linalg.norm(act_wpts[:, :2, :] - planned_wpts[:, :2, None], axis=1), axis=-1)
-        # Angle (theta)
-        accuracy[:, 1] = np.nanmean(np.linalg.norm(act_wpts[:, -1, :] - planned_wpts[:, -1, None], axis=1), axis=-1)
+        # @TODO (yanwei) Vectorize the following code.
+        # Compute mean.
+        round_num = act_wpts.shape[-1]
+        for wpt_index in range(act_wpts.shape[0]):
 
-        # Compute precision
-        wpt_mean = np.nanmean(act_wpts, axis=-1)
-        # Position(xy)
-        precision[:, 0] = np.nanmean(np.linalg.norm(act_wpts[:, :2, :] - wpt_mean[:, :2, None], axis=1), axis=-1)
-        # Angle(theta)
-        precision[:, 1] = np.nanmean(np.linalg.norm(act_wpts[:, -1, :] - wpt_mean[:, -1, None], axis=1), axis=-1)
+            # Skip wpt with only one success.
+            if np.sum(np.isnan(act_wpts[wpt_index, 0, :])) >= round_num - 1:
+                continue
 
+            # Compute accuracy
+            # # Position(xy)
+            # accuracy[wpt_index, 0] = np.linalg.norm(wpt_mean[:2] - planned_wpts[wpt_index, :2])
+            # # Angle (theta)
+            # accuracy[wpt_index, 1] = np.abs(wpt_mean[-1] - planned_wpts[wpt_index, -1])
+            accuracy[wpt_index, 0] = np.nanmean(np.linalg.norm(act_wpts[wpt_index, :2, :] - planned_wpts[wpt_index, :2, None], axis=0))
+            # Angle (theta)
+            accuracy[wpt_index, 1] = np.nanmean(np.abs(act_wpts[wpt_index, -1, :] - planned_wpts[wpt_index, -1, None]))
+
+            # Compute precision
+            wpt_mean = np.nanmean(act_wpts[wpt_index, :, :], axis=-1)
+            # Position(xy)
+            precision[wpt_index, 0] = np.sqrt(
+                np.nanmean(
+                    np.sum(
+                        (act_wpts[wpt_index, :2, :] - wpt_mean[:2, None])**2, axis=0), axis=-1))
+            # Angle(theta)
+            precision[wpt_index, 1] = np.nanstd(act_wpts[wpt_index, -1, :] - wpt_mean[-1, None], axis=-1)
         return accuracy, precision
 
     def save_to_file(self, filename):

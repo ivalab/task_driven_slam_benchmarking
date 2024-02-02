@@ -66,7 +66,7 @@ class Evaluation:
                     nav_slam_error = None if nav_slam_data is None else self.__compute_nav_slam_error(nav_slam_data)
                     if nav_slam_error is not None:
                         logging.info(
-                            f"est_rmse: {nav_slam_error.est_rmse:.02f} m, nav_rmse: {nav_slam_error.nav_rmse:.02f} m success rate: {nav_slam_error.success_rate}"
+                            f"est_rmse: {nav_slam_error.est_rmse:.02f} m, nav_rmse: {nav_slam_error.nav_rmse:.02f} m success rate: {nav_slam_error.completion:02f}"
                         )
 
                     # Add result to method.
