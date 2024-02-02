@@ -26,7 +26,7 @@
   
   <!--<env name="ROSCONSOLE_CONFIG_FILE" value="$(find nav_configs)/config/custom_teb_rosconsole.conf"/>-->
 
-  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_configs/params="true" launch-prefix="$(arg debug_prefix)">
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen" clear_params="true" launch-prefix="$(arg debug_prefix)">
       <rosparam file="$(find closedloop_nav_slam)/configs/params/common_costmap_params.yaml" command="load" ns="global_costmap"/>
       <rosparam file="$(find closedloop_nav_slam)/configs/params/common_costmap_params.yaml" command="load" ns="local_costmap"/>
       <rosparam file="$(find closedloop_nav_slam)/configs/params/local_costmap_params.yaml" command="load"/>
