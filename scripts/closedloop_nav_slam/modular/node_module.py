@@ -55,7 +55,18 @@ class MoveBaseNode(NodeBase):
         super().__init__(names, params)
 
     def compose_start_cmd(self) -> str:
-        return "roslaunch closedloop_nav_slam move_base.launch vis:=" + self._params["vis"]
+        cmd = (
+            "roslaunch closedloop_nav_slam move_base.launch"
+            + " vis:="
+            + self._params["vis"]
+            + " nav_name:="
+            + self._params["nav_name"]
+            + " goal_reached_thresh:="
+            + str(self._params["goal_reached_thresh"])
+            + " goal_reached_orient_thresh:="
+            + str(self._params["goal_reached_orient_thresh"])
+        )
+        return cmd
 
     def reset(self) -> bool:
         raise NotImplementedError
@@ -80,8 +91,6 @@ class WaypointsNavigatorNode(NodeBase):
             + "'"
             + " trials:="
             + str(self._params["trials"])
-            + " output_dir:="
-            + self._output_dir
             + " loops:="
             + str(self._params["loops"])
             + " gt_odom_topic:="
@@ -89,6 +98,8 @@ class WaypointsNavigatorNode(NodeBase):
             + " et_odom_topic:="
             + self._params["et_odom_topic"]
         )
+        if self._params["save_results"]:
+            cmd += " output_dir:=" + self._output_dir
         return cmd
 
     def reset(self) -> bool:

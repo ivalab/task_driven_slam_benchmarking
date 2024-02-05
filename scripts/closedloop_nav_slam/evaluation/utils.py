@@ -70,7 +70,7 @@ def load_planned_waypoints(filename):
 def load_nav_slam_data(
     prefix_path: Path,
     loops: int = 1,
-    robot_init_xytheta: np.ndarray = np.zeros((3)),
+    robot_init_xyztheta: np.ndarray = np.zeros((4)),
     compensate_map_offset: bool = False,
 ) -> Optional[NavSlamData]:
     """load nav slam data"""
@@ -107,12 +107,15 @@ def load_nav_slam_data(
 
     # Load act(gt) and est pose.
     act_poses = np.loadtxt(act_poses_path, ndmin=2)
-    if False and est_poses_path.exists():
+    if est_slam_poses_path.exists():
+        est_poses = np.loadtxt(est_slam_poses_path, ndmin=2)
+    elif est_poses_path.exists():
         est_poses = np.loadtxt(est_poses_path, ndmin=2)
     else:
-        est_poses = np.loadtxt(est_slam_poses_path, ndmin=2)
+        logging.error("No est poses available.")
+        return None
     if compensate_map_offset:
-        est_poses[:, 1:] = compensate_offset(est_poses[:, 1:], robot_init_xytheta)
+        est_poses[:, 1:] = compensate_offset(est_poses[:, 1:], robot_init_xyztheta)
     act_poses = act_poses[(end_timestamp >= act_poses[:, 0]) & (act_poses[:, 0] >= start_timestamp), :]
     est_poses = est_poses[(end_timestamp >= est_poses[:, 0]) & (est_poses[:, 0] >= start_timestamp), :]
 
@@ -145,7 +148,7 @@ def load_nav_slam_data(
     if gt_slam_poses_path.exists():
         gt_slam_poses = np.loadtxt(gt_slam_poses_path, ndmin=2) if gt_slam_poses_path.exists() else None
         if compensate_map_offset:
-            gt_slam_poses[:, 1:] = compensate_offset(gt_slam_poses[:, 1:], robot_init_xytheta)
+            gt_slam_poses[:, 1:] = compensate_offset(gt_slam_poses[:, 1:], robot_init_xyztheta)
         gt_slam_poses = gt_slam_poses[(end_timestamp >= gt_slam_poses[:, 0]) & (gt_slam_poses[:, 0] >= start_timestamp), :]
 
     # @TODO slam poses and extrinsics
@@ -179,11 +182,11 @@ def find_localization_range(planned_wpts, gt_wpts, loops: int) -> Tuple[float, f
     return (start_timestamp, end_timestamp)
 
 
-def compensate_offset(pose_array: np.ndarray, xytheta: np.ndarray):
+def compensate_offset(pose_array: np.ndarray, xyztheta: np.ndarray):
     """Compensate pose offset."""
     wTm = np.eye(4)
-    wTm[:3, :3] = Rotation.from_euler("z", xytheta[-1], degrees=False).as_matrix()
-    wTm[:2, 3] = xytheta[:-1]
+    wTm[:3, :3] = Rotation.from_euler("z", xyztheta[-1], degrees=False).as_matrix()
+    wTm[:3, 3] = xyztheta[:-1]
 
     mTb = np.repeat(np.eye(4)[None, :, :], pose_array.shape[0], axis=0)  # Nx4x4
     mTb[:, :3, :3] = Rotation.from_quat(pose_array[:, 3:]).as_matrix()

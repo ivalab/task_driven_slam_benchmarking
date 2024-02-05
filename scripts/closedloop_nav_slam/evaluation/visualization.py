@@ -148,7 +148,7 @@ class Visualization:
                     max_abs_xy_err = max(max_abs_xy_err, xy_err)
                     max_abs_theta_err = max(max_abs_theta_err, theta_err)
                 self.__draw_navigation_control_tolerance(ax)
-                max_abs_xy_err = max(self._params["xy_goal_tolerance"] * 100.0, max_abs_xy_err)
+                max_abs_xy_err = max(self._params["goal_reached_thresh"] * 100.0, max_abs_xy_err)
                 max_abs_xy_err *= 1.1
                 ax.set_xlim([-max_abs_xy_err, max_abs_xy_err])
                 ax.set_ylim([-max_abs_xy_err, max_abs_xy_err])
@@ -188,7 +188,7 @@ class Visualization:
             max_abs_xy_err = max(max_abs_xy_err, xy_err)
             max_abs_theta_err = max(max_abs_theta_err, theta_err)
         self.__draw_navigation_control_tolerance(ax)
-        max_abs_xy_err = max(self._params["xy_goal_tolerance"] * 100.0, max_abs_xy_err)
+        max_abs_xy_err = max(self._params["goal_reached_thresh"] * 100.0, max_abs_xy_err)
         max_abs_xy_err *= 1.1
         ax.set_xlim([-max_abs_xy_err, max_abs_xy_err])
         ax.set_ylim([-max_abs_xy_err, max_abs_xy_err])
@@ -231,7 +231,7 @@ class Visualization:
 
     def __draw_navigation_control_tolerance(self, ax, is_label_on=True):
         theta = np.linspace(0, 2.0 * np.pi, 150)
-        radius = self._params["xy_goal_tolerance"] * 100.0  # m to cm
+        radius = self._params["goal_reached_thresh"] * 100.0  # m to cm
         x = radius * np.cos(theta)
         y = radius * np.sin(theta)
         label = "control tolerance" if is_label_on else None

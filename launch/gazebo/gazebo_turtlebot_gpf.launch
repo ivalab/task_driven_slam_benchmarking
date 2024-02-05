@@ -23,14 +23,13 @@
   
   <!-- ############################ AMAZON WORLD BEGIN ######################## -->
   <!-- <arg name="world_file" default="$(find aws_robomaker_bookstore_world)/worlds/bookstore.world"/> -->
-  <arg name="world_file" default="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/>
-  <!-- <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/no_roof_small_warehouse.world"/> -->
-  <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/aws/aws_small_house.yaml"/>
+  <!-- <arg name="world_file" default="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
+  <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/no_roof_small_warehouse.world"/>
+  <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/aws/aws_small_warehouse.yaml"/>
   <arg name = "start_x" default="0"/>
   <arg name = "start_y" default="0"/>
-  <arg name = "start_z" default="0"/>
+  <arg name = "start_z" default="0.034"/>
   <arg name = "start_yaw" default="0"/>
-  <!-- <arg name = "start_z" default="0.034"/> -->
   <!-- ############################ AMAZON WORLD END ######################## -->
 
   <arg name="gui" default="false"/>
@@ -85,10 +84,12 @@
     <!--END gazebo_ros empty_world.launch-->
 
     <!--BEGIN turtlebot_gazebo kobuki.launch.xml-->
-    
-      <arg name="urdf_file" default="$(find xacro)/xacro '$(find closedloop_nav_slam)/configs/urdf/gazebo/kobuki_hexagons_fisheye_stereo_mpu_6000_$(arg laser_type).urdf.xacro'" />
+      <arg name="urdf_file" default="$(find xacro)/xacro '$(find closedloop_nav_slam)/configs/urdf/gazebo/kobuki_hexagons_laser_d435i.urdf.xacro'" />
     
       <param name="robot_description" command="$(arg urdf_file)" />
+      
+      <arg name="urdf_file2" default="$(find xacro)/xacro '$(find slam_nav)/urdf/turtlebot_cylinder.urdf.xacro' --inorder" />
+      <param name="simplified_robot_description" command="$(arg urdf_file2)" />
       
       <!-- Gazebo model spawner  -->
       <node name="spawn_turtlebot_model" pkg="gazebo_ros" type="spawn_model"

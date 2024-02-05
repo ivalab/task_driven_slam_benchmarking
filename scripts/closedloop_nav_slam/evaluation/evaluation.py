@@ -58,7 +58,7 @@ class Evaluation:
                     nav_slam_data = load_nav_slam_data(
                         prefix,
                         loops=self._params["loops"],
-                        robot_init_xytheta=self._params["robot_init_pose"],
+                        robot_init_xyztheta=self._params["robot_init_pose"],
                         compensate_map_offset=(method_name != "perfect_odometry"),
                     )
 

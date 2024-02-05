@@ -8,26 +8,32 @@ robot_odom_topic: "/odom_sparse"
 et_odom_topic: "/visual/odom"
 gt_pose_topic: "/slam/pose"
 et_pose_topic: "/visual/pose"
+save_results: true
 
 ## Waypoints navigator params.
-env_name: "tsrb"
-robot_init_pose: [-40, 14, 0.0] # [34.0, -6.0, 0.0] # x, y, theta
+env_name: "aws_small_house"
+# robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
+# robot_init_pose: [0, 0, 0.034, 0]
+robot_init_pose: [0, 0, 0, 0]
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
 path_files: ["path0"]
-trials: 20
+trials: 10
 
 ## Move base params.
-move_base_name: "/move_base/TebLocalPlannerROS" # No trailing of "/".
-yaw_goal_tolerance: 0.25 # rad
-xy_goal_tolerance: 0.1 # meters
+# nav_name: "gpf"
+# mov_base_prefix: "/move_base_gpf"
+goal_reached_orient_thresh: 0.25 # rad
+goal_reached_thresh: 0.1 # meters
+nav_name: "teb"
+move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".
 
 ## SLAM params.
 # params are stored in seperate .yaml files 
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["perfect_odometry"]
+slam_methods: ["svo"]
 enable_gt_slam_method: true
 enable_wheel_odometry: false # For simulation only!
 save_map: false

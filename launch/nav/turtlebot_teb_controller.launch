@@ -21,6 +21,9 @@
   <arg name="debug_prefix" value="" unless="$(arg debug)"/> <!-- valgrind - -tool=callgrind -->
   <arg name="debug_prefix" value="xterm -e gdb -ex run --args" if="$(arg debug)"/>
 
+  <arg name="goal_reached_thresh" default="0.2"/>
+  <arg name="goal_reached_orient_thresh" default="1.58"/>
+
   <!-- xterm -e gdb -ex run - -args -->
   
   
@@ -62,6 +65,8 @@
       <param name="TebLocalPlannerROS/gap_theta_start" value="3.15"/>
       
       <param name="TebLocalPlannerROS/max_global_plan_lookahead_dist" value="0"/>
+      <param name="TebLocalPlannerROS/xy_goal_tolerance" value="$(arg goal_reached_thresh)"/>
+      <param name="TebLocalPlannerROS/yaw_goal_tolerance" value="$(arg goal_reached_orient_thresh)"/>
       
       <!-- Disable the local costmap observation sources if they will not be used -->
       <param name="local_costmap/obstacle_layer/observation_sources" value="false" if="$(arg egocircle)"/>

@@ -313,8 +313,9 @@ class NavSlamTest:
         pose = Pose()
         pose.position.x = self._robot_init_pose[0]
         pose.position.y = self._robot_init_pose[1]
-        pose.orientation.w = np.cos(self._robot_init_pose[2] / 2.0)
-        pose.orientation.z = np.sin(self._robot_init_pose[2] / 2.0)
+        pose.position.z = self._robot_init_pose[2]
+        pose.orientation.w = np.cos(self._robot_init_pose[3] / 2.0)
+        pose.orientation.z = np.sin(self._robot_init_pose[3] / 2.0)
         state = ModelState(model_name="mobile_base", pose=pose)
         response = self._reset_robot_model_state_srv(state)
         assert response
@@ -422,10 +423,10 @@ if __name__ == "__main__":
     parser.add_argument("--loops", default="1", type=int, help="number of loops (repeatability)")
     parser.add_argument("--reset", default=False, action="store_true")
     parser.add_argument(
-        "--robot_init_pose", nargs=3, default=[34.0, -6.0, 0.0], help="robot init pose: [x, y, theta]", type=float
+        "--robot_init_pose", nargs=4, default=[34.0, -6.0, 0.0, 0.0], help="robot init pose: [x, y, z, theta]", type=float
     )
     parser.add_argument("--idle_time", default="1.0", type=float, help="idle time in seconds at each waypoint")
-    parser.add_argument("--output_dir", default="", type=str, help="directory to save stats data")
+    parser.add_argument("--output_dir", nargs="?", default="", type=str, help="directory to save stats data")
 
     args, unknown = parser.parse_known_args()
 

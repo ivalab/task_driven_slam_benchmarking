@@ -54,7 +54,7 @@ class EvoEvaluation:
             logging.info("Evaluate APE of GT SLAM and EST SLAM poses.")
             traj_gt_slam = self.__convert_to_evo_format(nav_slam_data.gt_slam_poses)
             traj_est = self.__convert_to_evo_format(nav_slam_data.est_poses)
-            traj_gt_slam, traj_est = sync.associate_trajectories(traj_gt_slam, traj_est, 0.02)
+            traj_gt_slam, traj_est = sync.associate_trajectories(traj_gt_slam, traj_est, 0.03)
             ape_result = evo_ape(traj_gt_slam, traj_est, pose_relation=metrics.PoseRelation.translation_part)
             est_rmse_gt_slam = ape_result.stats["rmse"]
             est_errs_gt_slam = ape_result.np_arrays["error_array"]  # ["timestamps"]

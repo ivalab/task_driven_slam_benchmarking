@@ -70,17 +70,17 @@ class CentralManager:
         rospy.loginfo("Task completion message received!")
         self._stop = True
 
-    def __set_move_base_params(self):
-        if "move_base_name" not in self._common_params:
-            return
-        cmd_prefix = "rosparam set " + self._common_params["move_base_name"] + "/"
-        for s in ["xy", "yaw"]:
-            msg = s + "_goal_tolerance"
-            if msg not in self._common_params:
-                continue
-            cmd = f"{cmd_prefix}{msg} {self._common_params[msg]}"
-            rospy.loginfo(cmd)
-            subprocess.call(cmd, shell=True)
+    # def __set_move_base_params(self):
+    #     if "move_base_name" not in self._common_params:
+    #         return
+    #     cmd_prefix = "rosparam set " + self._common_params["move_base_name"] + "/"
+    #     for s in ["xy", "yaw"]:
+    #         msg = s + "_goal_tolerance"
+    #         if msg not in self._common_params:
+    #             continue
+    #         cmd = f"{cmd_prefix}{msg} {self._common_params[msg]}"
+    #         rospy.loginfo(cmd)
+    #         subprocess.call(cmd, shell=True)
 
     def __save_map(self, slam_name: str, path_name: str, trial: int):
         rospy.loginfo("Saving map ... ")
@@ -161,10 +161,10 @@ class CentralManager:
                     mb_node.start()
                     time.sleep(10.0)
 
-                    # - Set move_base params
-                    rospy.loginfo("Setting move_base params ...")
-                    self.__set_move_base_params()
-                    time.sleep(3.0)
+                    # # - Set move_base params
+                    # rospy.loginfo("Setting move_base params ...")
+                    # self.__set_move_base_params()
+                    # time.sleep(3.0)
 
                     # Start wheel odometry
                     wo_node = None

@@ -189,6 +189,29 @@ class DsolNode(NodeBase):
         return cmd
 
 
+class SvoNode(NodeBase):
+    def __init__(self, params: Dict):
+        names = ["svo"]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        # ROS_WS = os.path.join(os.environ["HOME"], "svo_ws")
+        DATASET_NAME = "dummy_dataset"
+        TRACK_LOG_DIR = os.path.join(os.environ["HOME"], "slam_ws/result/svo/gazebo")
+        cmd = (
+            "bash "
+            + str(SLAM_SETTINGS_PATH / "call_svo.sh ")
+            + str(self._params["grid_size"])
+            + " "
+            + DATASET_NAME
+            + " "
+            + TRACK_LOG_DIR
+            + " "
+            + self._params["et_pose_topic"]
+        )
+        return cmd
+
+
 # Fusion node.
 class MsfNode(NodeBase):
     def __init__(self, params: Dict):
@@ -228,6 +251,8 @@ def CreateSlamNode(params: Dict) -> NodeBase:
         return MsckfNode(params)
     elif "dsol" == slam_method:
         return DsolNode(params)
+    elif "svo" == slam_method:
+        return SvoNode(params)
     elif "perfect_odometry" == slam_method:
         return PerfectOdometryNode(params)
     elif "robot_odometry" == slam_method:

@@ -1,6 +1,7 @@
 <launch>
     <!-- map to odom tf -->
     <node name="map_to_odom_publisher" pkg="gazebo_fake_localization" type="gazebo_fake_localization" required="true" launch-prefix="">
+        <param name="transform_timeout" value="0.1" />
     </node>
 </launch>
   

@@ -1,7 +1,7 @@
 
 # Most params are loaded from the running configuration file (config.yaml).
 
-method_list: ["orb3"] # Methods list to be evaluated.
+method_list: ["perfect_odometry"] # Methods list to be evaluated.
 save_to_result_dir: True # Whether to save data to the existing result directory (defined in the running config file)
 output_dir: "/tmp" # Define the output dir.
 save_data: True # Whether to save data.
