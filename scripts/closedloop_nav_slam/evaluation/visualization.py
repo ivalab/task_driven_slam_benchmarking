@@ -99,11 +99,11 @@ class Visualization:
                     )
                     # planned waypoints.
                     for index, pt in enumerate(experiment["waypoints"]):
-                        plt.plot(pt[0], pt[1], color="g", marker="o", linestyle="None")
+                        plt.plot(pt[0], pt[1], color="b", marker="o", linestyle="None")
                         plt.text(pt[0], pt[1], "wpt " + str(index))
                     # actual waypoints.
                     for pt in nav_data.act_wpts:
-                        plt.scatter(pt[1], pt[2], s=80, facecolors="none", edgecolors="r")
+                        plt.scatter(pt[1], pt[2], s=80, facecolors="none", edgecolors="g")
                     plt.title(
                         f"{method_name} \n trajectory length {nav_data.traj_length:.2f} m, trajectory_duration {nav_data.traj_duration:.2f} s \n est rmse {nav_err.est_rmse:.2f} m, nav rmse {nav_err.nav_rmse:.2f} m, completion {nav_err.completion:.2f}"
                     )

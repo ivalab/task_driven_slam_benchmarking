@@ -2,7 +2,7 @@
 
 This file provides steps to install and run ros packages on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
 
-## Install.
+## Install
 1. Install wstool.
         
         sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall
@@ -12,8 +12,8 @@ This file provides steps to install and run ros packages on both gazebo and real
         sudo apt install ros-noetic-urg-node # hokuyo laser
         sudo apt install ros-noetic-realsense2-camera # realsense camera
         sudo apt install ros-noetic-realsense2-description # camera urdf
-        sudo apt install ros-noetic-teb-local-planner
-        sudo apt install ros-noetic-sparse-bundle-adjustment
+        sudo apt install ros-noetic-teb-local-planner # move_base
+        sudo apt install ros-noetic-sparse-bundle-adjustment # slam_toolbox
 
 3. Initialize workspace.
 
@@ -36,59 +36,60 @@ This file provides steps to install and run ros packages on both gazebo and real
 
 
 5. Build SLAM methods.
+   Please follow the REAME in each repo to build the library.
 
-        # TODO
+   - [slam_toolbox](https://github.com/ivalab/slam_toolbox)
+   - [hector_slam](https://github.com/ivalab/hector_slam)
+   - [gf_orb_slam2](https://github.com/ivalab/gf_orb_slam2)
+   - [orb3](https://github.gatech.edu/RoboSLAM/ORB_SLAM3)
+   - [msckf](https://github.gatech.edu/RoboSLAM/msckf_vio)
+   - [dsol](https://github.gatech.edu/RoboSLAM/dsol)
+   - [svo](https://github.gatech.edu/RoboSLAM/rpg_svo_pro_open)
 
 
-## Run Real World Experiments with Turtlebot2.
+## Run Real World Test
+[RealWorldTest](RealWorldTest.md)
+
+
+## Run Simulation
+
+
+**!!! Please remember to source the workspace in each new terminal.!!!**
+    
+    source catkin_ws/devel/setup.bash
+
+1. Set map and robot init pose. The map and robot_init_pose are recorded [here](configs/map//README.md).
+   1. Set them in the gazebo launch file.
+        
+        [launch/gazebo/gazebo_turtlebot.launch](launch/gazebo//gazebo_turtlebot.launch)
+
+   2. Set them in the config file.
+   
+        [scripts/closedloop_nav_slam/settings/config.yaml](scripts/closedloop_nav_slam/settings/config.yaml)
+
+2. Start launch files.
 ```bash
-source catkin_ws/devel/setup.bash
-
-# Start turtlebot bringup. Making sure /dev/kobuki exists (symlink).
-roslaunch closedloop_nav_slam base.launch serialport:=/dev/ttyUSB0
-
-# Start sensors.
-roslaunch rplidar_ros rplidar_s2.launch serialport:=/dev/ttyUSB1
-roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true # d435i
-# OR in one launch file.
-roslaunch closedloop_nav_slam sensor_drivers.launch serialport:=/dev/ttyUSB1 enable_depth:=true
-
-# Start move base # nav_name:=teb 
-roslaunch closedloop_nav_slam move_base.launch
-
-# Start SLAM
-roslaunch slam_toolbox online_sync.launch
-
-# Drive the robot.
-roslaunch turtlebot_teleop logitech.launch
-# OR
-roslaunch turtlebot_teleop keyboard_teleop.launch
-# OR use rviz to send nav goal.
-rviz -d launch/closedloop_viz.rviz
-
-# Start rosbag record.
-# Please configure the topic names as args: topics:="$TOPIC_1 $TOPIC_2"
-roslaunch closedloop_nav_slam data_logging.launch path_data_logging:=$YOUR_RECORD_PATH
-```
-
-## Run Simulation.
-```bash
+# Start roscore.
 roscore
 
 # Start gazebo.
 roslaunch closedloop_nav_slam gazebo_turtlebot.launch
-# Launch vlp16.
+
+# (Optional) How to use vlp16 in gazebo.
 # roslaunch closedloop_nav_slam gazebo_turtlebot.launch laser_type:=vlp16
 
 # Run onekey testing script.
 roscd closedloop_nav_slam
-cd scripts/closedloop_nav_slam
-# Configure the parameters under ./settings/config.yaml, ./settings/slam/${SLAM_METHOD}.yaml
-python ros/onekey.py
+
+cd scripts/closedloop_nav_slam/ros
+
+python onekey.py
+
 ```
 
-## Add a new SLAM method.
-1. Define a new class called `${SLAM_NAME}Node` in `modular/slam_module.py`. For example, when adding a `amcl`:
+## Extension
+### Add a new SLAM method.
+1. Define a new class called `${SLAM_NAME}Node` in `scripts/closedloop_nav_slam/modular/slam_module.py`. For example, when adding `amcl`:
 
 ```python
     class AmclNode(NodeBase):
@@ -104,13 +105,13 @@ python ros/onekey.py
             + self._params["et_pose_topic"]
         )
 ```
-2. Add the new method to the factor class in `modular/slam_module.py`. It direcly maps the `slam_method_name` to the defined `slam_node` class.
+2. Add the new method to the factory class in `scripts/closedloop_nav_slam/modular/slam_module.py`. It direcly maps the `slam_method_name` to the defined `slam_node` class.
 ```python
 def CreateSlamNode(params: Dict) -> NodeBase:
     ...
 ```
 
-3. Add slam parameters in `settings/slam/slam_method.yaml`. For example: 
+3. Add slam parameters in `scripts/closedloop_nav_slam/settings/slam/slam_method.yaml`. For example: 
 ```yaml
 ## amcl
 slam_method: "amcl"
@@ -123,17 +124,21 @@ loops: 1 # Define the number of loops in a single trial.
 need_map_to_odom_tf: false # Whether needs an additional map_to_odom_tf publisher node. Most 2D laser methods in ros publish this tf inside their class. Some do not and need this publisher node.
 ```
 
-## Define Waypoints From A Known Map.
+### Define Waypoints From A Known Map.
 ```
 roslaunch closedloop_nav_slam gazebo_turtlebot.launch
 
 # Start waypoints saver
 rosrun closedloop_nav_slam waypoints_saver.py
 
-# Start rviz and pick 2D nav goal.
+# Start rviz and select 2D nav goal.
 rviz -d launch/closedloop_viz.rviz
 
+# The waypoints will be saved under `scripts/closedloop_nav_slam/ros/` and can later be moved to `configs/path/`
 ```
+
+## Evaluation
+Please follow the [steps](scripts/closedloop_nav_slam/evaluation/README.md).
 
 ## Issue Tracking.
 - How to disable odom_to_base tf from kobuki_gazebo?

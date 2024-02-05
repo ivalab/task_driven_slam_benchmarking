@@ -20,4 +20,5 @@ The robot init pose is defined in `x, y, z, yaw` order with the units of `meters
     name: classroom_textured_collid
     robot_init_pose: [9, -5, 0.0, 3.14159265359]
 
+# TODOs
 - [ ] Create a config file for each world, the file should be accessible by both a ros launch file and a yaml file.

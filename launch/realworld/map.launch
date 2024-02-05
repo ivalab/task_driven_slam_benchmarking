@@ -1,0 +1,17 @@
+ <launch>
+    <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/realworld/tsrb.yaml"/>
+    <arg name = "start_x" default="0"/>
+    <arg name = "start_y" default="0"/>
+    <arg name = "start_z" default="0"/>
+    <arg name = "start_yaw" default="0"/>
+ 
+    <node name="map" pkg="map_server" type="map_server" args="$(arg map_file)" required="true">
+        <param name="frame_id" value="map"/>
+    </node>
+
+    <!-- map to slam_map tf -->
+    <node pkg="tf" type="static_transform_publisher" name="nav_map_to_slam_map_publisher" 
+      args="$(arg start_x) $(arg start_y) 0 $(arg start_yaw) 0 0 map slam_map 50" >
+    </node>
+
+</launch>

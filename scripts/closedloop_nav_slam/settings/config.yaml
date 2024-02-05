@@ -11,10 +11,10 @@ et_pose_topic: "/visual/pose"
 save_results: true
 
 ## Waypoints navigator params.
-env_name: "aws_small_house"
+env_name: "aws_small_warehouse"
 # robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
-# robot_init_pose: [0, 0, 0.034, 0]
-robot_init_pose: [0, 0, 0, 0]
+robot_init_pose: [0, 0, 0.034, 0]
+# robot_init_pose: [0, 0, 0, 0]
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
 path_files: ["path0"]

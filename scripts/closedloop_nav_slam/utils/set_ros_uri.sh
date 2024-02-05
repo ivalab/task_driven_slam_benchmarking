@@ -41,7 +41,7 @@ else
 fi
 
 # Source the updated .bashrc
-source "$HOME/.bashrc"
+# source "$HOME/.bashrc"
 
 echo "ROS_MASTER_URI set to: $ros_master_uri"
 echo "ROS_IP set to: $ip_address"

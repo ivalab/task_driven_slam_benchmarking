@@ -1,6 +1,6 @@
 <launch>
     <arg name="enable_depth"        default="true"/>
-    <arg name="serialport"          default="/dev/ttyUSB1"/>
+    <arg name="serialport"          default="/dev/rplidar"/>
 
     <!-- laser -->
     <include file="$(find rplidar_ros)/launch/rplidar_s2.launch">
