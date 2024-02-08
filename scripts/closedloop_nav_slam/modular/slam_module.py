@@ -36,6 +36,7 @@ class RobotOdometryNode(NodeBase):
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam robot_odometry.launch"
 
+
 class WheelOdometryNode(NodeBase):
     def __init__(self, params: Dict):
         names = ["wheel_odometry_publisher"]

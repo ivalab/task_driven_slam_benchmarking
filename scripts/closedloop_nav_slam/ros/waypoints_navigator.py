@@ -17,7 +17,6 @@ Functions
 3. Reset gazebo model, turtlebot pose.
 4. Reset odometry.
 5. Reset costmap.
-6. Reset slam_toolbox.
 """
 
 import argparse
@@ -58,6 +57,7 @@ class NavSlamTest:
         self._reset = args.reset
         self._idle_time = args.idle_time
         self._output_dir = args.output_dir
+        self._test_type = args.test_type
 
         # Other parameters.
         self._wait_for_resetting = True
@@ -73,6 +73,7 @@ class NavSlamTest:
         self._et_odoms = []
         self._gt_poses = []
         self._et_poses = []
+        self._robot_odom = None
         self._robot_odoms = []
 
         # ROS subscribers.
@@ -102,7 +103,8 @@ class NavSlamTest:
         self.__setupGoals(args.path_file)
 
         # Reset a few.
-        self.__resetRobotModelState()
+        if "gazebo" == self._test_type:
+            self.__resetRobotModelState()
         self.__resetOdom()
         self._wait_for_resetting = False
 
@@ -145,6 +147,7 @@ class NavSlamTest:
         if self._wait_for_resetting:
             self._robot_odoms.clear()
             return
+        self._robot_odom = msg
         self._robot_odoms.append(self.__convertNavOdomMsgToArray(msg))
 
     def __groundTruthOdometryCallback(self, msg):
@@ -225,7 +228,7 @@ class NavSlamTest:
                             rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
                             break
                         rospy.sleep(self._idle_time)
-                        self._actual_path.poses.append(PoseStamped(Header(stamp=self._gt_odom.header.stamp), goal))
+                        self._actual_path.poses.append(PoseStamped(Header(stamp=self._robot_odom.header.stamp), goal))
                     if not success:
                         break
                     rospy.loginfo(f"Sequencing finished: {loop_count}.")
@@ -276,15 +279,14 @@ class NavSlamTest:
         self._wait_for_resetting = True
         self.__resetGoals()
         rospy.sleep(0.2)
-        self.__resetRobotModelState()
-        rospy.sleep(0.2)
+        if "gazebo" == self._test_type:
+            self.__resetRobotModelState()
+            rospy.sleep(0.2)
         self.__resetCostmaps()
         rospy.sleep(0.2)
         self.__resetOdom()
         rospy.sleep(0.2)
         self._wait_for_resetting = False
-        # self.__resetSlamToolbox()
-        # rospy.sleep(0.2)
 
     def __resetCostmaps(self):
         rospy.loginfo("Reset costmaps ...")
@@ -419,11 +421,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     # parser.add_argument("--mode", dest="mode", default="localization", help="mode: localization|mapping")
     parser.add_argument("--env", dest="env", default="tsrb", help="environment (tsrb | classroom)")
+    parser.add_argument("--test_type", dest="test_type", default="gazebo", help="test_type (gazebo | realworld)")
     parser.add_argument("--path_file", dest="path_file", default="path0.txt", help="path")
     parser.add_argument("--loops", default="1", type=int, help="number of loops (repeatability)")
     parser.add_argument("--reset", default=False, action="store_true")
     parser.add_argument(
-        "--robot_init_pose", nargs=4, default=[34.0, -6.0, 0.0, 0.0], help="robot init pose: [x, y, z, theta]", type=float
+        "--robot_init_pose",
+        nargs=4,
+        default=[34.0, -6.0, 0.0, 0.0],
+        help="robot init pose: [x, y, z, theta]",
+        type=float,
     )
     parser.add_argument("--idle_time", default="1.0", type=float, help="idle time in seconds at each waypoint")
     parser.add_argument("--output_dir", nargs="?", default="", type=str, help="directory to save stats data")

@@ -83,6 +83,8 @@ class WaypointsNavigatorNode(NodeBase):
             "roslaunch closedloop_nav_slam waypoints_navigator.launch"
             + " env:="
             + self._params["env_name"]
+            + " test_type:="
+            + self._params["test_type"]
             + " path_file:="
             + self._path_file
             + ".txt"
@@ -97,6 +99,12 @@ class WaypointsNavigatorNode(NodeBase):
             + self._params["gt_odom_topic"]
             + " et_odom_topic:="
             + self._params["et_odom_topic"]
+            + " robot_odom_topic:="
+            + self._params["robot_odom_topic"]
+            + " gt_pose_topic:="
+            + self._params["gt_pose_topic"]
+            + " et_pose_topic:="
+            + self._params["et_pose_topic"]
         )
         if self._params["save_results"]:
             cmd += " output_dir:=" + self._output_dir

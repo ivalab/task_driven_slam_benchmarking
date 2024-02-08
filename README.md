@@ -5,7 +5,7 @@ This file provides steps to install and run ros packages on both gazebo and real
 ## Install
 1. Install wstool.
         
-        sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall
+        sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall python3-pip
 
 2. Install sensor drivers (for real robot testing) and other libs.
 
@@ -29,13 +29,18 @@ This file provides steps to install and run ros packages on both gazebo and real
         wstool update -t src -j20
         rosdep install --from-paths src -i -y
 
-4. Build.
+4. Build ROS Nodes.
 
         cd ~/catkin_ws
         catkin build -j8 -DCMAKE_BUILD_TYPE=Release
 
+5. Install non-ROS Code.
 
-5. Build SLAM methods.
+        cd ~/catkin_ws/src/closedloop_nav_slam/scripts
+        pip install -e .
+
+
+6. Build SLAM methods.
    Please follow the REAME in each repo to build the library.
 
    - [slam_toolbox](https://github.com/ivalab/slam_toolbox)
@@ -126,7 +131,8 @@ need_map_to_odom_tf: false # Whether needs an additional map_to_odom_tf publishe
 
 ### Define Waypoints From A Known Map.
 ```
-roslaunch closedloop_nav_slam gazebo_turtlebot.launch
+# First set the proper map file in the launch file.
+roslaunch closedloop_nav_slam map.launch
 
 # Start waypoints saver
 rosrun closedloop_nav_slam waypoints_saver.py

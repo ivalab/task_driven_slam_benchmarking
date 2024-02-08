@@ -105,3 +105,15 @@ roslaunch turtlebot_teleop logitech.launch
 # Please set the topic names as args: topics:="$TOPIC_1 $TOPIC_2"
 roslaunch closedloop_nav_slam data_logging.launch path_data_logging:=$PATH_TO_SAVE_ROSBAGS
 ```
+
+- To Stop the Robot ([stop_robot.sh](scripts/closedloop_nav_slam/utils/stop_robot.sh))
+
+```bash
+cd scripts/closedloop_nav_slam/utils
+sh stop_robot.sh
+```
+
+- To Kill the `onekey.py` Script
+```bash
+kill -9 $(ps aux | grep onekey.py)
+```

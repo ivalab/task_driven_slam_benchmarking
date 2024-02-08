@@ -1,5 +1,6 @@
 <launch>
     <arg name="env" default="tsrb"/>
+    <arg name="test_type" default="gazebo"/>
     <arg name="path_file" default="path0.txt"/>
     <arg name="reset" default="true"/>
     <arg name="trials" default="5"/>
@@ -11,11 +12,12 @@
     <arg name="et_pose_topic" default="/visual/pose"/>
     <arg name="gt_odom_topic" default="/ground_truth/odom"/>
     <arg name="et_odom_topic" default="/visual/odom"/>
+    <arg name="robot_odom_topic" default="/odom"/>
 
-    <node name="waypoints_navigator" type="waypoints_navigator.py" pkg="closedloop_nav_slam" output="screen" args="--env $(arg env) --path_file $(arg path_file) --reset --trials $(arg trials) --robot_init_pose $(arg robot_init_pose) --idle_time $(arg idle_time) --output_dir $(arg output_dir) --loops $(arg loops)">
+    <node name="waypoints_navigator" type="waypoints_navigator.py" pkg="closedloop_nav_slam" output="screen" args="--test_type $(arg test_type) --env $(arg env) --path_file $(arg path_file) --reset --trials $(arg trials) --robot_init_pose $(arg robot_init_pose) --idle_time $(arg idle_time) --output_dir $(arg output_dir) --loops $(arg loops)">
         <remap from="/gt_odom" to="$(arg gt_odom_topic)"/>
         <remap from="/et_odom" to="$(arg et_odom_topic)"/>
-        <remap from="/robot_odom" to="/odom_sparse"/>
+        <remap from="/robot_odom" to="$(arg robot_odom_topic)"/>
         <remap from="/gt_pose" to="$(arg gt_pose_topic)"/>
         <remap from="/et_pose" to="$(arg et_pose_topic)"/>
     </node>

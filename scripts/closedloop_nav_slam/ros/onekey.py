@@ -13,7 +13,6 @@ import subprocess
 import time
 from pathlib import Path
 
-import numpy as np
 import rospy
 import yaml
 from closedloop_nav_slam.modular.node_module import (
@@ -27,7 +26,11 @@ from closedloop_nav_slam.modular.slam_module import (
     MsfNode,
     WheelOdometryNode,
 )
-from closedloop_nav_slam.utils.path_definitions import *
+from closedloop_nav_slam.utils.path_definitions import (
+    CONFIG_PATH,
+    SLAM_SETTINGS_PATH,
+    UTILS_PATH,
+)
 from nav_msgs.msg import Path as PathMsg
 
 
@@ -113,12 +116,14 @@ class CentralManager:
                     wpt_nav_node.start()
                     time.sleep(5.0)
 
+                    # - Compose robot bash script
+                    robot_bash_script = "bash " + str(UTILS_PATH) + "/start_robot.sh"
                     # - Reset everything.
-                    rospy.loginfo("Reset everything ...")
-                    robot_bash_cmd = "bash " + str(UTILS_PATH) + "/start_robot.sh"
-                    cmd_reset_robot = robot_bash_cmd + " 1 1"  # BUTTON STATE
-                    subprocess.Popen(cmd_reset_robot, shell=True)
-                    time.sleep(10.0)
+                    if "gazebo" == self._common_params["test_type"]:
+                        rospy.loginfo("Reset everything ...")
+                        cmd_reset_robot = robot_bash_script + " 1 1"  # BUTTON STATE
+                        subprocess.Popen(cmd_reset_robot, shell=True)
+                        time.sleep(10.0)
 
                     # - Start gt slam if enabled
                     gt_slam_node = None
@@ -176,7 +181,7 @@ class CentralManager:
 
                     # - Start robot
                     rospy.loginfo("Start the robot ...")
-                    cmd_start_robot = robot_bash_cmd + " 0 1"  # BUTTON STATE
+                    cmd_start_robot = robot_bash_script + " 0 1"  # BUTTON STATE
                     subprocess.Popen(cmd_start_robot, shell=True)
 
                     # Wait for the test to finish.
@@ -190,11 +195,11 @@ class CentralManager:
                     if not self._stop:
                         rospy.loginfo("Stop requested by user.")
 
-                    ## Save map if requested
+                    # - Save map if requested
                     if self._common_params["save_map"]:
                         self.__save_map(method_name, pfile, trial)
 
-                    ## Stop nodes.
+                    # - Stop nodes.
                     if gt_slam_node:
                         rospy.loginfo("Killing gt slam method ...")
                         gt_slam_node.stop()
