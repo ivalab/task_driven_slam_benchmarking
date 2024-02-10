@@ -31,7 +31,7 @@ roslaunch closedloop_nav_slam sensor_drivers.launch enable_depth:=true
 
 ### Mapping
 ```bash
-# 1. Start move base. Default planner (nav_name:=teb)
+# 1. Start move base. Default planner (nav_name:=teb (default) | gpf)
 roslaunch closedloop_nav_slam move_base.launch goal_reached_thresh:=0.3
 
 # 2. Start slam_toolbox

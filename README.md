@@ -51,6 +51,8 @@ This file provides steps to install and run ros packages on both gazebo and real
    - [dsol](https://github.gatech.edu/RoboSLAM/dsol)
    - [svo](https://github.gatech.edu/RoboSLAM/rpg_svo_pro_open)
 
+## Run Mapping with GPF
+[Mapping](Mapping.md)
 
 ## Run Real World Test
 [RealWorldTest](RealWorldTest.md)
