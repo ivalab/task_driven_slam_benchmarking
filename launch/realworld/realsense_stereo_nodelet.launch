@@ -12,7 +12,7 @@
   <arg name="serial_no"           default=""/>
   <arg name="usb_port_id"         default=""/>
   <arg name="device_type"         default=""/>
-  <arg name="camera"              default="realsense"/>
+  <arg name="camera"              default="camera"/>
   <arg name="tf_prefix"           default="$(arg camera)"/>
   <arg name="json_file_path"      default=""/>
   <arg name="rosbag_filename"     default=""/>

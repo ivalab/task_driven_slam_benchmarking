@@ -1,6 +1,6 @@
 <launch>
   <arg name="serialport"            default="/dev/rplidar"/>
-  <arg name="scan_topic"            default="scan">
+  <arg name="scan_topic"            default="scan"/>
   <node name="rplidarNode"          pkg="rplidar_ros"  type="rplidarNode" output="screen">
   <param name="serial_port"         type="string" value="$(arg serialport)"/>
   <param name="serial_baudrate"     type="int"    value="1000000"/>
