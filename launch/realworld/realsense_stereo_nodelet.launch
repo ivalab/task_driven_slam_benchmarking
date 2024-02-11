@@ -1,6 +1,8 @@
 <!--
   https://github.gatech.edu/ivabots/sparse_nav_benchmark/blob/master/launch/real_experiment/realsense_stereo_nodelet.launch
 -->
+<!-- Coordinates and Frames: https://github.com/IntelRealSense/realsense-ros?tab=readme-ov-file -->
+<!-- It looks like both infra1&infra2 images have the same header frame id: infra1, a bug in code or just parameters? -->
 <launch>
   <rosparam>
     /camera/stereo_module/emitter_enabled: 0
@@ -10,7 +12,7 @@
   <arg name="serial_no"           default=""/>
   <arg name="usb_port_id"         default=""/>
   <arg name="device_type"         default=""/>
-  <arg name="camera"              default="camera"/>
+  <arg name="camera"              default="realsense"/>
   <arg name="tf_prefix"           default="$(arg camera)"/>
   <arg name="json_file_path"      default=""/>
   <arg name="rosbag_filename"     default=""/>
