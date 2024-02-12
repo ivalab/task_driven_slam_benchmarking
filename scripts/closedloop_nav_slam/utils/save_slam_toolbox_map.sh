@@ -4,12 +4,12 @@ echo "cmd to save slam_toolbox map (map && pose_graph) ..."
 
 if [ -z "$1" ]
 then
-    PREFIX=$(rospack find closedloop_nav_slam)/configs/map/slam_toolbox
+    PREFIX=$(rospack find closedloop_nav_slam)/configs/map
 else
     PREFIX=$1
 fi
 
-NAME=map_$(date '+%Y-%m-%d-%H:%M:%S')
+NAME=slam_toolbox_map_$(date '+%Y-%m-%d-%H:%M:%S')
 
 echo mapname=$PREFIX/$NAME
 

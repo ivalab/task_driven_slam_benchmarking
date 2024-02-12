@@ -1,7 +1,7 @@
 <launch>
     <arg name="enable_depth"        default="true"/>
     <arg name="serialport"          default="/dev/rplidar"/>
-    <arg name="enable_laser_filter" default="false"/>
+    <arg name="enable_laser_filter" default="true"/>
 
     <!-- robot -->
     <include file="$(find closedloop_nav_slam)/launch/realworld/minimal.launch">
