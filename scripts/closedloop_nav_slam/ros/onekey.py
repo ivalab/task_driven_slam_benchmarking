@@ -50,6 +50,9 @@ class CentralManager:
         # Load yaml.
         self._common_params = self.__load_params(config_file)
         assert self._common_params
+        if "realworld" == self._common_params["test_type"]:
+            rospy.loginfo("! Enforce trials to be 1 for realworld test !")
+            self._common_params["trials"] = 1
 
         # Create result dir.
         self._prefix = (
@@ -105,7 +108,9 @@ class CentralManager:
                 for trial in range(params["trials"]):
                     rospy.loginfo(f"Trial: {trial}")
 
-                    path_dir = method_dir / pfile / ("trial" + str(trial))
+                    # Create postfix for realworld test to differentiate trials
+                    postfix = "_" + time.strftime("%Y%m%d-%H%M%S") if "realworld" == params["test_type"] else ""
+                    path_dir = method_dir / pfile / ("trial" + str(trial) + postfix)
                     path_dir.mkdir(parents=True, exist_ok=True)
 
                     # - Assuming gazebo is already started in a separated window.
