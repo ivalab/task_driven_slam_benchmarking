@@ -6,9 +6,11 @@
     
     source catkin_ws/devel/setup.bash
 
+**All the following steps should be executed on the laptop (can through `ssh`) which connects to the turtlebot.**
+
 ### Connect Hardware
 - [ ] Connect the usb hub cable to the laptop.
-- [ ] Connect d435i camera cable to the laptop.
+- ~~[ ] Connect d435i camera cable to the laptop.~~
 - [ ] Turn on the turtlebot.
 
 ### Activate Sensors
@@ -16,48 +18,47 @@
 # Start roscore.
 roscore
 
-# Start turtlebot bringup. Make sure `/dev/kobuki` (symlink) exists.
+# Start all in one file.
+roslaunch closedloop_nav_slam robot.launch
+
+# OR start things separately.
+# a. Start turtlebot bringup. Make sure `/dev/kobuki` (symlink) exists.
 roslaunch closedloop_nav_slam minimal.launch
-
-# Start sensors. Make sure `/dev/rplidar` (symlink) exists.
+# b. Start lidar. Make sure `/dev/rplidar` (symlink) exists.
 roslaunch rplidar_ros rplidar_s2.launch
+# c. Start camera.
 roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true # d435i
-
-# OR
-
-# Start all sensors in one launch file.
-roslaunch closedloop_nav_slam sensor_drivers.launch enable_depth:=true
 ```
 
-### Mapping
-```bash
-# 1. Start move base. Default planner (nav_name:=teb (default) | gpf)
-roslaunch closedloop_nav_slam move_base.launch goal_reached_thresh:=0.3
+### Mapping (Skip if alreay done)
 
-# 2. Start slam_toolbox
-roslaunch slam_toolbox online_sync.launch vis:=true
+- **Build the map**
+    ```bash
+    # 1. Start move base. Default planner (nav_name:=teb (default) | gpf)
+    roslaunch closedloop_nav_slam move_base.launch goal_reached_thresh:=0.3
 
-# 3. Drop nav goal through rviz and start the mapping.
+    # 2. Start slam_toolbox
+    roslaunch slam_toolbox online_sync.launch vis:=true
 
-# 3.a Fine tune the nav planner parameters.
-cd configs/params/
+    # 3. Drop nav goal through rviz and start the mapping.
 
-# 3.b Fine tune the slam parameters.
-cd ${SLAM_TOOLBOX_PATH}/slam_toolbox/slam_toolbox/config
+    # 3.a Fine tune the nav planner parameters.
+    cd configs/params/
 
-# 4. After mapping is done, execute the following script to save the map.
-cd scripts/closedloop_nav_slam/utils/
-sh save_slam_toolbox_map.sh $PATH_TO_SAVE_MAP
+    # 3.b Fine tune the slam parameters.
+    cd ${SLAM_TOOLBOX_PATH}/slam_toolbox/slam_toolbox/config
 
-```
+    # 4. After mapping is done, execute the following script to save the map.
+    cd scripts/closedloop_nav_slam/utils/
+    sh save_slam_toolbox_map.sh $PATH_TO_SAVE_MAP
+    ```
 
-### Define Waypoints
-[Tutorial](README.md)
+- **Define Waypoints**
+    [Tutorial](README.md)
+    - [ ] Save map to `configs/map/realworld/`
+    - [ ] Save waypoints and path to `configs/path/realworld/`
 
-- [ ] Save map to `configs/map/realworld/`
-- [ ] Save waypoints and path to `configs/path/realworld/`
-
-### Accurcy and Precision Test
+### Main test
 **1. Set parameters.**
 - [ ] **Shutdown** `move_base` and `slam_toolbox` launched in the Mapping phase. (skip if not on)
 - [ ] Set the correct map and robot init pose in the following file.
@@ -107,7 +108,7 @@ roslaunch closedloop_nav_slam data_logging.launch path_data_logging:=$PATH_TO_SA
 ```
 
 - To Stop the Robot ([stop_robot.sh](scripts/closedloop_nav_slam/utils/stop_robot.sh))
-
+*Or simply lift the robot a bit.*
 ```bash
 cd scripts/closedloop_nav_slam/utils
 sh stop_robot.sh
