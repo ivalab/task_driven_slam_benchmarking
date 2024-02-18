@@ -1,19 +1,20 @@
 # Mapping
 
-The default local planner it `teb`, please follow the steps below to use `gpf`
+The default local planner is `teb`, please follow the steps below to use `gpf`
 
 ## Acquire GPF launch files.
 
 Assume you have already compiled and installed `gpf` ros packages.
 
 1. Clone and compile `slam_nav` repo, which contains the launch and parameters files for `gpf`
+```bash
+cd catkin_ws/src
 
-    cd catkin_ws/src
+git clone git@github.gatech.edu:ivabots/slam_nav.git
 
-    git clone git@github.gatech.edu:ivabots/slam_nav.git
-
-    cd ../src
-    catkin build -j8
+cd ../src
+catkin build -j8
+```
 
 2. Install dependencies contained in the rosinstall file through `wstool`, remember to merge the rosinstall file (assume you already have one)
 
