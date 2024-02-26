@@ -14,6 +14,6 @@ source devel/setup.bash
 # Launch dsol.
 echo "Launching DSOL."
 # roslaunch dsol gazebo_DSOL_stereo.launch vis:=$1 save:=$2 cell_size:=$3 log:=100 min_log_level:=0
-roslaunch dsol gazebo_DSOL_stereo.launch save:=$TRACK_LOG_PATH slam_pose_topic:=$SLAM_POSE_TOPIC
+roslaunch dsol dsol_d435i.launch save:=$TRACK_LOG_PATH slam_pose_topic:=$SLAM_POSE_TOPIC
 #  cell_size:=10
 #  min_log_level:=0 log:=100

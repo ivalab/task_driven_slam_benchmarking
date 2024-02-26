@@ -6,5 +6,5 @@ enable_msf: false
 slam_sensor_type: "stereo"
 source_msg_parent_frame: "gyro_link"
 source_msg_child_frame: "left_camera_optical_frame"
-loops: 1
+loops: 2
 need_map_to_odom_tf: true

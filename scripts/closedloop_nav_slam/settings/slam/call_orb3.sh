@@ -15,4 +15,4 @@ cd src/ORB_SLAM3/Examples_old/ROS/ORB_SLAM3/launch
 
 # Launch GFGG.
 echo "Launching ORB3."
-roslaunch gazebo_ORB3_stereo.launch path_slam_config:=$ROS_WS/src/ORB_Data/ path_track_logging:=$TRACK_LOG_PATH do_rectify:=false num_all_feature:=$FEATURE_NUM slam_pose_topic:=$SLAM_POSE_TOPIC
+roslaunch ORB3_d435i.launch path_slam_config:=$ROS_WS/src/ORB_Data/ path_track_logging:=$TRACK_LOG_PATH do_rectify:=false num_all_feature:=$FEATURE_NUM slam_pose_topic:=$SLAM_POSE_TOPIC

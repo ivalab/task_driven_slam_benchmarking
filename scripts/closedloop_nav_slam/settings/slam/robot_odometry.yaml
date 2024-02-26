@@ -3,6 +3,6 @@ slam_method: "robot_odometry"
 mode: "localization"
 enable_msf: false
 slam_sensor_type: "ground_truth"
-loops: 1
+loops: 2
 need_map_to_odom_tf: false
 et_odom_topic: "/odom_sparse"
