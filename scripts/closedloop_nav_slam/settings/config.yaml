@@ -14,8 +14,8 @@ save_results: true
 ## Waypoints navigator params.
 env_name: "realworld"
 # robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
-robot_init_pose: [0, 0, 0, 0]
-# robot_init_pose: [0, 0, 0, 0]
+# robot_init_pose: [34.869, 1.501, 0, -1.5708]
+robot_init_pose: [0, 0, 0, -1.57]
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
 path_files: ["path0"]
@@ -24,7 +24,7 @@ trials: 1 # In realworld test, the robot has to be reset manually after each tri
 ## Move base params.
 # nav_name: "gpf"
 # mov_base_prefix: "/move_base_gpf"
-goal_reached_orient_thresh: 0.5 # rad # 0.25
+goal_reached_orient_thresh: 0.25 # rad # 0.25
 goal_reached_thresh: 0.2 # meters # 0.1
 nav_name: "teb"
 move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".

@@ -1,0 +1,8 @@
+image: fourth_floor_gazebo.pgm
+resolution: 0.100000
+# -46.83, -34.35, 0
+origin: [-81.699, -35.9, 0.000000]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196
+

@@ -1,9 +1,10 @@
  <launch>
-    <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/realworld/tsrb.yaml"/>
+    <!-- <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/realworld/tsrb.yaml"/> -->
+    <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_realworld.yaml"/>
     <arg name = "start_x" default="0"/>
     <arg name = "start_y" default="0"/>
     <arg name = "start_z" default="0"/>
-    <arg name = "start_yaw" default="0"/>
+    <arg name = "start_yaw" default="-1.5708"/>
  
     <node name="map" pkg="map_server" type="map_server" args="$(arg map_file)" required="true">
         <param name="frame_id" value="map"/>
