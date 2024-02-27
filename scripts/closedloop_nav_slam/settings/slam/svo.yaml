@@ -5,6 +5,6 @@ grid_size: 24
 enable_msf: false
 slam_sensor_type: "stereo"
 source_msg_parent_frame: "gyro_link"
-source_msg_child_frame: "left_camera_optical_frame"
+source_msg_child_frame: "camera_infra1_optical_frame"
 loops: 2
 need_map_to_odom_tf: true

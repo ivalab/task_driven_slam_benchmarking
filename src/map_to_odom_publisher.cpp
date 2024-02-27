@@ -94,10 +94,10 @@ void MapToOdomPublisher::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
         {
             // Define map frame to align with base frame.
             geometry_msgs::TransformStamped tf_msg = tf_->lookupTransform(
-                base_frame_, source_msg_parent_frame_, ros::Time(0));
+                base_frame_, source_msg_parent_frame_, ros::Time(0), ros::Duration(0.1));
             tf2::convert(tf_msg.transform, mTp_);
             tf_msg = tf_->lookupTransform(source_msg_child_frame_, base_frame_,
-                                          ros::Time(0));
+                                          ros::Time(0), ros::Duration(0.1));
             tf2::convert(tf_msg.transform, cTb_);
 
             is_transform_valid_ = true;
@@ -120,7 +120,7 @@ void MapToOdomPublisher::OdomMsgCallback(const nav_msgs::OdometryConstPtr& msg)
     try
     {
         geometry_msgs::TransformStamped tf_msg = tf_->lookupTransform(
-            base_frame_, odom_frame_, msg->header.stamp - ros::Duration(0.01));
+            base_frame_, odom_frame_, msg->header.stamp, ros::Duration(0.1));
         tf2::convert(tf_msg.transform, bTo);
     }
     catch (tf2::TransformException ex)
