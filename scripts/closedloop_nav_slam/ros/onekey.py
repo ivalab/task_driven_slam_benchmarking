@@ -113,7 +113,7 @@ class CentralManager:
                     path_dir = method_dir / pfile / ("trial" + str(trial) + postfix)
                     path_dir.mkdir(parents=True, exist_ok=True)
                     # Update params to save other SLAM results.
-                    params["path_dir"] = str(path_dir)
+                    params["path_dir"] = str(path_dir) + "/"
 
                     # - Assuming gazebo is already started in a separated window.
 
