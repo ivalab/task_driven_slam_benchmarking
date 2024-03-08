@@ -14,6 +14,7 @@ This file provides steps to install and run ros packages on both gazebo and real
         sudo apt install ros-noetic-realsense2-description # camera urdf
         sudo apt install ros-noetic-teb-local-planner # move_base
         sudo apt install ros-noetic-sparse-bundle-adjustment # slam_toolbox
+        sudo apt install ros-noetic-pointcloud-to-laserscan # 3d pointcloud to 2d laser scan
 
 3. Initialize workspace.
 

@@ -5,7 +5,7 @@ The robot init pose is defined in `x, y, z, yaw` order with the units of `meters
 ## AWS World
     
     name: aws_small_warehouse
-    robot_init_pose: [0.0, 0.0, 0.0, 0.034]
+    robot_init_pose: [0.0, 0.0, 0.034, 0.0]
 
     name: aws_small_house
     robot_init_pose: [0.0, 0.0, 0.0, 0.0]

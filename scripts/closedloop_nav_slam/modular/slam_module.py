@@ -233,6 +233,29 @@ class MsfNode(NodeBase):
         )
 
 
+# 3D Lidar SLAM
+class HdlSlamNode(NodeBase):
+    def __init__(self, params: Dict):
+        names = [
+            "hdl_graph_slam_nodelet",
+            "prefiltering_nodelet",
+            "scan_matching_odometry_nodelet",
+            "velodyne_nodelet_manager",
+        ]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
+        cmd = (
+            "bash "
+            + str(SLAM_SETTINGS_PATH / "call_hdl_slam.sh ")
+            + ROS_WS
+            + " "
+            + self._params["et_pose_topic"]
+        )
+        return cmd
+
+
 # Factory.
 def CreateSlamNode(params: Dict) -> NodeBase:
     slam_method = params["slam_method"]
@@ -258,6 +281,8 @@ def CreateSlamNode(params: Dict) -> NodeBase:
         return PerfectOdometryNode(params)
     elif "robot_odometry" == slam_method:
         return RobotOdometryNode(params)
+    elif "hdl_slam" == slam_method:
+        return HdlSlamNode(params)
     else:
         print(f"{slam_method} NOT DEFINED!")
         raise RuntimeError
