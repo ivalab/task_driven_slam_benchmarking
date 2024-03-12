@@ -15,10 +15,11 @@ save_results: true
 env_name: "realworld"
 # robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
 # robot_init_pose: [34.869, 1.501, 0, -1.5708]
-robot_init_pose: [0, 0, 0, -1.57]
+# robot_init_pose: [0, 0, 0, -1.57]
+robot_init_pose: [-15.553, -10.59, 0, 0]
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
-path_files: ["path0"]
+path_files: ["path2"]
 trials: 1 # In realworld test, the robot has to be reset manually after each trial.
 
 ## Move base params.
@@ -34,7 +35,7 @@ move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["hector_slam"]
+slam_methods: ["dsol"]
 enable_gt_slam_method: true
 enable_wheel_odometry: false # For simulation only!
 save_map: false
