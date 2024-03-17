@@ -1,7 +1,7 @@
 # orb3
 slam_method: "orb3"
 mode: "slam"
-feature_num: 1200
+feature_num: 400
 enable_msf: false
 slam_sensor_type: "stereo"
 source_msg_parent_frame: "camera_infra1_frame"
