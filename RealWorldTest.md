@@ -114,6 +114,12 @@ cd scripts/closedloop_nav_slam/utils
 sh stop_robot.sh
 ```
 
+- To simulate a bumper-hit action, it will terminate the `waypoints_navigator.py` script safely
+```bash
+cd scripts/closedloop_nav_slam/utils
+sh hit_bumper.sh
+```
+
 - To Kill the `onekey.py` Script
 ```bash
 kill -9 $(ps aux | grep onekey.py)
