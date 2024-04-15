@@ -1,5 +1,4 @@
  <launch>
-    <!-- <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/realworld/tsrb.yaml"/> -->
     <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/tsrb/fourth_floor_realworld.yaml"/>
     <arg name = "start_x" default="0"/>
     <arg name = "start_y" default="0"/>

@@ -110,7 +110,6 @@ class GfggNode(NodeBase):
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "closedloop_ws")
         TRACK_LOG_DIR = self._params["path_dir"]
-        # os.path.join(os.environ["HOME"], "slam_ws/result/gf_orb_slam2", self._params["test_type"], self._params["env_name"])
         cmd = (
             "bash "
             + str(SLAM_SETTINGS_PATH / "call_gfgg.sh ")
@@ -133,7 +132,6 @@ class Orb3Node(NodeBase):
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "closedloop_ws")
         TRACK_LOG_DIR = self._params["path_dir"]
-        # TRACK_LOG_DIR = os.path.join(os.environ["HOME"], "slam_ws/result/orb3/gazebo")
         cmd = (
             "bash "
             + str(SLAM_SETTINGS_PATH / "call_orb3.sh ")
@@ -156,7 +154,6 @@ class MsckfNode(NodeBase):
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "svo_ws")
         TRACK_LOG_DIR = self._params["path_dir"]
-        # TRACK_LOG_DIR = os.path.join(os.environ["HOME"], "slam_ws/result/msckf/gazebo")
         cmd = (
             "bash "
             + str(SLAM_SETTINGS_PATH / "call_msckf.sh ")
@@ -179,7 +176,6 @@ class DsolNode(NodeBase):
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "turtlebot_ws")
         TRACK_LOG_DIR = self._params["path_dir"]
-        # TRACK_LOG_DIR = os.path.join(os.environ["HOME"], "slam_ws/result/dsol/gazebo")
         cmd = (
             "bash "
             + str(SLAM_SETTINGS_PATH / "call_dsol.sh ")
@@ -203,7 +199,6 @@ class SvoNode(NodeBase):
         # ROS_WS = os.path.join(os.environ["HOME"], "svo_ws")
         DATASET_NAME = "dummy_dataset"
         TRACK_LOG_DIR = self._params["path_dir"]
-        # TRACK_LOG_DIR = os.path.join(os.environ["HOME"], "slam_ws/result/svo/gazebo")
         cmd = (
             "bash "
             + str(SLAM_SETTINGS_PATH / "call_svo.sh ")
