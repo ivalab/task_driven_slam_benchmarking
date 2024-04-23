@@ -246,13 +246,35 @@ class HdlSlamNode(NodeBase):
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
-        cmd = (
-            "bash "
-            + str(SLAM_SETTINGS_PATH / "call_hdl_slam.sh ")
-            + ROS_WS
-            + " "
-            + self._params["et_pose_topic"]
-        )
+        cmd = "bash " + str(SLAM_SETTINGS_PATH / "call_hdl_slam.sh ") + ROS_WS + " " + self._params["et_pose_topic"]
+        return cmd
+
+
+class FastLio2Node(NodeBase):
+    def __init__(self, params: Dict):
+        names = [
+            "laserMapping",
+        ]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
+        cmd = "bash " + str(SLAM_SETTINGS_PATH / "call_fast_lio2.sh ") + ROS_WS + " " + self._params["et_pose_topic"]
+        return cmd
+
+
+class LiorfNode(NodeBase):
+    def __init__(self, params: Dict):
+        names = [
+            "liorf_imageProjection",
+            "liorf_imuPreintegration",
+            "liorf_mapOptmization",
+        ]
+        super().__init__(names, params)
+
+    def compose_start_cmd(self) -> str:
+        ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
+        cmd = "bash " + str(SLAM_SETTINGS_PATH / "call_liorf.sh ") + ROS_WS + " " + self._params["et_pose_topic"]
         return cmd
 
 
@@ -283,6 +305,10 @@ def CreateSlamNode(params: Dict) -> NodeBase:
         return RobotOdometryNode(params)
     elif "hdl_slam" == slam_method:
         return HdlSlamNode(params)
+    elif "fast_lio2" == slam_method:
+        return FastLio2Node(params)
+    elif "liorf" == slam_method:
+        return LiorfNode(params)
     else:
         print(f"{slam_method} NOT DEFINED!")
         raise RuntimeError

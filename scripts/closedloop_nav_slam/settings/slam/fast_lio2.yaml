@@ -1,5 +1,5 @@
 # hdl_slam
-slam_method: "hdl_slam"
+slam_method: "fast_lio2"
 mode: "slam"
 enable_msf: false
 slam_sensor_type: "laser"

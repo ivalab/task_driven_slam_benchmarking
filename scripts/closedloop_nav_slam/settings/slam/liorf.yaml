@@ -1,0 +1,9 @@
+# hdl_slam
+slam_method: "liorf"
+mode: "slam"
+enable_msf: false
+slam_sensor_type: "laser"
+source_msg_parent_frame: "velodyne"
+source_msg_child_frame: "velodyne"
+loops: 1
+need_map_to_odom_tf: true

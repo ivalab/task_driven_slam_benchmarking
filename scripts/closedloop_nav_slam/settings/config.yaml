@@ -1,9 +1,9 @@
 ## Common params.
-# result_dir: /mnt/DATA/rosbags/cl_nav_slam_test/
-result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
+result_dir: /mnt/DATA/experiments/closedloop_nav_slam/cl_nav_slam_test/
+# result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
 # result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 vis: "false"
-test_type: "realworld" # [gazebo, realworld]
+test_type: "gazebo" # [gazebo, realworld]
 gt_odom_topic: "/ground_truth/odom"
 robot_odom_topic: "/odom"
 et_odom_topic: "/visual/odom"
@@ -12,15 +12,15 @@ et_pose_topic: "/visual/pose"
 save_results: true
 
 ## Waypoints navigator params.
-env_name: "realworld"
+env_name: "aws_small_warehouse"
 # robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
 # robot_init_pose: [34.869, 1.501, 0, -1.5708]
-robot_init_pose: [0, 0, 0, -1.57]
+robot_init_pose: [0, 0, 0.034, 0]
 # robot_init_pose: [-15.553, -10.59, 0, 0]
 # env_name: "classroom"
 # robot_init_pose: [9.0, -5.0, 3.141592653] # x, y, theta
-path_files: ["path1"]
-trials: 1 # In realworld test, the robot has to be reset manually after each trial.
+path_files: ["path0"]
+trials: 10 # In realworld test, the robot has to be reset manually after each trial.
 
 ## Move base params.
 # nav_name: "gpf"
@@ -35,8 +35,8 @@ move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["svo"]
-enable_gt_slam_method: true
+slam_methods: ["liorf"]
+enable_gt_slam_method: false
 enable_wheel_odometry: false # For simulation only!
 save_map: false
 

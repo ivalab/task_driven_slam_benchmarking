@@ -12,9 +12,11 @@
   <xacro:include filename="$(find turtlebot_description)/urdf/stacks/hexagons.urdf.xacro"/>
   <xacro:include filename="$(find closedloop_nav_slam)/configs/urdf/gazebo/sensors/fisheye_stereo.urdf.xacro"/>
   <xacro:include filename="$(find closedloop_nav_slam)/configs/urdf/gazebo/sensors/vlp16.urdf.xacro"/>
+  <xacro:include filename="$(find closedloop_nav_slam)/configs/urdf/gazebo/sensors/laser.urdf.xacro"/>
 
   <xacro:kobuki/>
   <xacro:stack_hexagons parent="base_link"/>
   <xacro:sensor_stereo  parent="base_link"/>
   <xacro:sensor_vlp16   parent="base_link" name="velodyne" topic="/velodyne_points" hz="10" samples="440" gpu="true"/>
+  <xacro:sensor_laser   parent="base_link"/>
 </robot>

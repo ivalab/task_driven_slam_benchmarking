@@ -16,7 +16,7 @@
 	<xacro:property name="laser_oy" value="0" /> -->
  	<xacro:property name="laser_px" value="0.04" />
 	<xacro:property name="laser_py" value="0.0" />
-	<xacro:property name="laser_pz" value="0.35" />
+	<xacro:property name="laser_pz" value="0.4" />
 	<xacro:property name="laser_or" value="0" />
 	<xacro:property name="laser_op" value="0" />
 	<xacro:property name="laser_oy" value="0" /> 
