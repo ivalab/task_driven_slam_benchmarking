@@ -81,17 +81,21 @@
 # Amazon Worlds
 
 - git:
-    local-name: aws-robomaker-small-warehouse-world
-    uri: https://github.com/aws-robotics/aws-robomaker-small-bookstore-world.git
-    version: master
+    local-name: aws-robomaker-bookstore-world
+    uri: https://github.com/aws-robotics/aws-robomaker-bookstore-world.git
+    version: ros1
 - git:
-    local-name: aws-robomaker-small-warehouse-world
+    local-name: aws-robomaker-small-house-world
     uri: https://github.com/aws-robotics/aws-robomaker-small-house-world.git
-    version: master
+    version: ros1
 - git:
     local-name: aws-robomaker-small-warehouse-world
     uri: https://github.com/aws-robotics/aws-robomaker-small-warehouse-world.git
-    version: master
+    version: ros1
+- git:
+    local-name: aws-robomaker-hospital-world
+    uri: https://github.com/aws-robotics/aws-robomaker-hospital-world.git
+    version: ros1
 
 # Sensor Drivers
 
