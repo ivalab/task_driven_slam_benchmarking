@@ -60,7 +60,7 @@
 
 - git:
     local-name: turtlebot_demo
-    uri: https://github.gatech.edu/ivabots/turtlebot_demo.git
+    uri: git@github.gatech.edu:ivabots/turtlebot_demo.git
     version: noetic/roboslam
 
 # Gazebo Tools
