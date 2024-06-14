@@ -21,7 +21,8 @@ This file provides steps to install and run ros packages on both gazebo and real
         mkdir -p ~/catkin_ws/src
         cd ~/catkin_ws/src
         
-        git clone https://github.gatech.edu/RoboSLAM/closedloop_nav_slam.git
+        git clone git@github.gatech.edu:RoboSLAM/closedloop_nav_slam.git
+        # For non-ssh user, please use link: https://github.gatech.edu/RoboSLAM/closedloop_nav_slam.git
 
         cd ~/catkin_ws && wstool init src
 
