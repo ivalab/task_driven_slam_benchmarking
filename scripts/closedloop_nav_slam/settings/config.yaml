@@ -12,8 +12,8 @@ et_pose_topic: "/visual/pose"
 save_results: true
 
 ## Waypoints navigator params.
-env_name: "aws_small_warehouse"
-# robot_init_pose: [-40, 14, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
+env_name: "aws_hospital"
+robot_init_pose: [0, 10, 0.0, 0.0] # [34.0, -6.0, 0.0, 0.0] # x, y, z, theta
 # robot_init_pose: [34.869, 1.501, 0, -1.5708]
 robot_init_pose: [0, 0, 0.034, 0]
 # robot_init_pose: [-15.553, -10.59, 0, 0]
@@ -35,7 +35,7 @@ move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".
 
 # slam_method: "gfgg"
 # slam_methods: ["msckf", "gfgg", "orb3"]
-slam_methods: ["liorf"]
+slam_methods: ["slam_toolbox"]
 enable_gt_slam_method: false
 enable_wheel_odometry: false # For simulation only!
 save_map: false

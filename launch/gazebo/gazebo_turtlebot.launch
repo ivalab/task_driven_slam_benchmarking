@@ -23,13 +23,14 @@
   
   <!-- ############################ AMAZON WORLD BEGIN ######################## -->
   <!-- <arg name="world_file" default="$(find aws_robomaker_bookstore_world)/worlds/bookstore.world"/> -->
+  <arg name="world_file" default="$(find aws_robomaker_hospital_world)/worlds/hospital.world"/>
   <!-- <arg name="world_file" default="$(find aws_robomaker_small_house_world)/worlds/small_house.world"/> -->
-  <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/no_roof_small_warehouse.world"/>
-  <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/aws/aws_small_warehouse.yaml"/>
+  <!-- <arg name="world_file" default="$(find aws_robomaker_small_warehouse_world)/worlds/no_roof_small_warehouse.world"/> -->
+  <arg name="map_file" default="$(find closedloop_nav_slam)/configs/map/aws/aws_hospital.yaml"/>
   <arg name = "start_x" default="0"/>
-  <arg name = "start_y" default="0"/>
-  <!-- <arg name = "start_z" default="0"/> -->
-  <arg name = "start_z" default="0.034"/>
+  <arg name = "start_y" default="10"/>
+  <arg name = "start_z" default="0"/>
+  <!-- <arg name = "start_z" default="0.034"/> -->
   <arg name = "start_yaw" default="0"/>
   <!-- ############################ AMAZON WORLD END ######################## -->
 
