@@ -43,7 +43,7 @@ roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true
     # 3. Drop nav goal through rviz and start the mapping.
 
     # 3.a Fine tune the nav planner parameters.
-    cd configs/params/
+    cd configs/params/nav
 
     # 3.b Fine tune the slam parameters.
     cd ${SLAM_TOOLBOX_PATH}/slam_toolbox/slam_toolbox/config
@@ -67,7 +67,7 @@ roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true
 
 - [ ] Set running parameters in the following file
 
-    [scripts/closedloop_nav_slam/settings/config.yaml](scripts/closedloop_nav_slam/settings/config.yaml)
+    [config.yaml](configs/params/config.yaml)
 
         `test_type: "realworld"`
         `result_dir: ${PATH_TO_SAVE_RESULT}`
@@ -81,7 +81,7 @@ roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true
 
 **3. Start the running script.**
 ```bash
-cd scripts/closedloop_nav_slam/ros
+cd scripts/nodes
 
 python onekey.py
 
@@ -107,16 +107,16 @@ roslaunch turtlebot_teleop logitech.launch
 roslaunch closedloop_nav_slam data_logging.launch path_data_logging:=$PATH_TO_SAVE_ROSBAGS
 ```
 
-- To Stop the Robot ([stop_robot.sh](scripts/closedloop_nav_slam/utils/stop_robot.sh))
+- To Stop the Robot ([stop_robot.sh](scripts/tools/stop_robot.sh))
 *Or simply lift the robot a bit.*
 ```bash
-cd scripts/closedloop_nav_slam/utils
+cd scripts/tools
 sh stop_robot.sh
 ```
 
 - To simulate a bumper-hit action, it will terminate the `waypoints_navigator.py` script safely
 ```bash
-cd scripts/closedloop_nav_slam/utils
+cd scripts/tools
 sh hit_bumper.sh
 ```
 

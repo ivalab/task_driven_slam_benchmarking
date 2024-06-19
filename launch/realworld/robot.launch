@@ -14,7 +14,7 @@
     </include>
 
     <node pkg="laser_filters" type="scan_to_scan_filter_chain" name="laser_filter" if="$(arg enable_laser_filter)">
-        <rosparam command="load" file="$(find closedloop_nav_slam)/configs/params/laser_filter_config.yaml" />
+        <rosparam command="load" file="$(find closedloop_nav_slam)/configs/params/sensor/laser_filter_config.yaml" />
         <remap from="scan" to="/scan_base" />
         <remap from="scan_filtered" to="/scan" />
     </node>

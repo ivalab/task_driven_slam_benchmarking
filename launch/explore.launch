@@ -1,0 +1,52 @@
+<launch>
+
+    <arg name="vis" default="true"/>
+    <arg name="goal_reached_thresh" default="0.2"/>
+    <arg name="goal_reached_orient_thresh" default="1.58"/>
+    <arg name="transform_publish_period" default="0.1"/>
+    <arg name="minimum_travel_distance" default="0.25"/>
+    <arg name="minimum_travel_heading" default="0.25"/>
+    <!-- <arg name="exploration_map_name" default="move_base_gpf/global_costmap/costmap"/> -->
+    <arg name="exploration_map_name" default="map"/>
+
+    <!-- slam node -->
+    <node pkg="slam_toolbox" type="sync_slam_toolbox_node" name="slam_toolbox" output="screen">
+        <rosparam command="load" file="$(find slam_nav)/config/turtlebot_nav/mapper_online_sync_params.yaml" />
+        <param name="transform_publish_period" value="$(arg transform_publish_period)"/>
+        <param name="minimum_travel_distance"  value="$(arg minimum_travel_distance)"/>
+        <param name="minimum_travel_heading"  value="$(arg minimum_travel_heading)"/>
+    </node>
+
+    <!-- planner node -->
+    <!-- <include file="$(find slam_nav)/launch/nav_controller/turtlebot_switched_gpf_potential_gap_laser_ego_remote_controller.launch">
+        <arg name="goal_reached_thresh" value="$(arg goal_reached_thresh)"/>
+        <arg name="goal_reached_orient_thresh" value="$(arg goal_reached_orient_thresh)"/>
+    </include> -->
+    <include file="$(find closedloop_nav_slam)/launch/nav/turtlebot_teb_controller.launch">
+        <arg name="goal_reached_thresh" value="$(arg goal_reached_thresh)"/>
+        <arg name="goal_reached_orient_thresh" value="$(arg goal_reached_orient_thresh)"/>
+    </include>
+
+    <!-- exploration node -->
+    <node pkg="explore_lite" type="explore" respawn="false" name="explore" output="screen">
+        <param name="robot_base_frame" value="base_footprint"/>
+        <param name="costmap_topic" value="$(arg exploration_map_name)"/>
+        <param name="costmap_updates_topic" value="$(arg exploration_map_name)_updates"/>
+        <param name="visualize" value="true"/>
+        <param name="planner_frequency" value="0.33"/>
+        <param name="progress_timeout" value="30.0"/>
+        <param name="potential_scale" value="3.0"/>
+        <param name="orientation_scale" value="0.0"/>
+        <param name="gain_scale" value="1.0"/>
+        <param name="transform_tolerance" value="0.3"/>
+        <param name="min_frontier_size" value="0.5"/>
+    </node>
+
+    <!-- visualization -->
+    <group if="$(arg vis)">
+        <node pkg="rviz" type="rviz" name="closedloop_rviz" output="screen" 
+            args="-d $(find slam_nav)/rviz/exploration.rviz">
+        </node>
+    </group>
+
+</launch>

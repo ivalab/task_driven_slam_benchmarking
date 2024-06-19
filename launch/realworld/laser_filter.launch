@@ -2,7 +2,7 @@
     <arg name="scan_in_topic" default="scan"/>
     <arg name="scan_out_topic" default="scan_filtered"/>
     <node pkg="laser_filters" type="scan_to_scan_filter_chain" name="laser_filter">
-        <rosparam command="load" file="$(find closedloop_nav_slam)/configs/params/laser_filter_config.yaml" />
+        <rosparam command="load" file="$(find closedloop_nav_slam)/configs/params/sensor/laser_filter_config.yaml" />
         <remap from="scan" to="$(arg scan_in_topic)" />
         <remap from="scan_filtered" to="$(arg scan_out_topic)" />
         <!-- default publish to `scan` topic -->

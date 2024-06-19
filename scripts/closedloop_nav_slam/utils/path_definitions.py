@@ -12,20 +12,24 @@
 import os
 from pathlib import Path
 
-SCRIPTS_PATH = Path(__file__).resolve().parent.parent
-UTILS_PATH = SCRIPTS_PATH / "utils"
-SETTINGS_PATH = SCRIPTS_PATH / "settings"
-CONFIG_PATH = SETTINGS_PATH
-SLAM_SETTINGS_PATH = SETTINGS_PATH / "slam"
+import rospkg
+
+# Get the path of a package
+ROSPACK = rospkg.RosPack()
+PKG_NAME = "closedloop_nav_slam"
+PKG_PATH = Path(ROSPACK.get_path(PKG_NAME))
+
+CONFIGS_PATH = PKG_PATH / "configs"
+PARAMS_PATH = CONFIGS_PATH / "params"
+SLAM_CONFIGS_PATH = PARAMS_PATH / "slam"
+SCRIPTS_PATH = PKG_PATH / "scripts"
+NODES_PATH = SCRIPTS_PATH / "nodes"
+UTILS_PATH = SCRIPTS_PATH / PKG_NAME / "utils"
+TOOLS_PATH = SCRIPTS_PATH / "tools"
 
 if __name__ == "__main__":
-    print(f"SCRIPTS_PATH: {SCRIPTS_PATH}")
-    assert os.path.exists(SCRIPTS_PATH)
-    print(f"UTILS_PATH: {UTILS_PATH}")
-    assert os.path.exists(UTILS_PATH)
-    print(f"SETTINGS_PATH: {SETTINGS_PATH}")
-    assert os.path.exists(SETTINGS_PATH)
-    print(f"CONFIG_PATH: {CONFIG_PATH}")
-    assert os.path.exists(CONFIG_PATH)
-    print(f"SLAM_SETTINS_PATH: {SLAM_SETTINGS_PATH}")
-    assert os.path.exists(SETTINGS_PATH)
+
+    path_list = [PKG_PATH, CONFIGS_PATH, SLAM_CONFIGS_PATH, SCRIPTS_PATH, NODES_PATH, UTILS_PATH, TOOLS_PATH]
+    for p in path_list:
+        print(f"Path: {p}")
+        assert os.path.exists(p), f"{p} does NOT exist."

@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
+catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -179,12 +179,12 @@ target_link_libraries(tf_to_pose_converter_node
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
-  scripts/closedloop_nav_slam/ros/exploration.py
-  scripts/closedloop_nav_slam/ros/ground_truth_odometry_publisher.py
-  scripts/closedloop_nav_slam/ros/onekey.py
-  scripts/closedloop_nav_slam/ros/waypoints_navigator.py
-  scripts/closedloop_nav_slam/ros/waypoints_saver.py
-  scripts/closedloop_nav_slam/ros/wheel_odometry_publisher.py
+  scripts/nodes/exploration.py
+  scripts/nodes/ground_truth_odometry_publisher.py
+  scripts/nodes/onekey.py
+  scripts/nodes/waypoints_navigator.py
+  scripts/nodes/waypoints_saver.py
+  scripts/nodes/wheel_odometry_publisher.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 

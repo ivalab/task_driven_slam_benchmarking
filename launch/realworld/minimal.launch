@@ -31,7 +31,7 @@
   <!-- velocity commands multiplexer -->
   <!-- if I need to change anything, I'll make my own parameter file -->
   <node pkg="nodelet" type="nodelet" name="cmd_vel_mux" args="load yocs_cmd_vel_mux/CmdVelMuxNodelet $(arg nodelet_manager)" respawn="$(arg respawn)">
-    <param name="yaml_cfg_file" value="$(find turtlebot_roboslam)/params/mux.yaml"/>
+    <param name="yaml_cfg_file" value="$(find closedloop_nav_slam)/configs/params/sensor/mux.yaml"/>
     <remap from="cmd_vel_mux/output" to="mobile_base/commands/velocity"/>
   </node>
 

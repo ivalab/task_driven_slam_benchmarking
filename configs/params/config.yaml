@@ -1,0 +1,48 @@
+## Common params.
+
+# Directory where the running data is saved.
+result_dir: /mnt/DATA/experiments/closedloop_nav_slam/cl_nav_slam_test/
+# result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
+# result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
+
+test_type: "gazebo"                    # Defines the test type: [gazebo, realworld]
+gt_odom_topic: "/ground_truth/odom"    # Ground truth odometry topic name.
+robot_odom_topic: "/odom"              # Robot odometry topic name (wheel odom mostly).
+et_odom_topic: "/visual/odom"          # Estimated odometry topic.
+gt_pose_topic: "/slam/pose"            # Ground truth pose topic.
+et_pose_topic: "/visual/pose"          # Estimated pose topic.
+save_results: true                     # Flag to toggle running results saving.
+
+## Map/World parmeters.
+env_name: "aws_hospital"               # World/map name.
+robot_init_pose: [0, 10, 0.0, 0.0]     # Robot start location:  (x, y, z, theta), must be the same as in gazebo launch.
+                                       # Other maps: {
+                                       #     "aws_small_warehouse": [0,  0, 0.034, 0]
+                                       #     "aws_small_house":     [0,  0, 0, 0]
+                                       #     "aws_small_hosptial":  [0, 10, 0, 0]
+                                       #     "tsrb":                [-40, 14, 0, 0]
+                                       # }
+                                       #
+path_files: ["path0"]                  # Define the path file.
+trials: 10                             # Define the trials/rounds (loops are defined in each slam method).
+                                       # In realworld test, this value must be 1, because the robot requires 
+                                       # manually reset after each trial.
+
+## Move base params.
+goal_reached_orient_thresh: 0.25                     # In radian.
+goal_reached_thresh: 0.2                             # In meters.
+nav_name: "teb"                                      # Nav name: ["teb", "gpf"]
+move_base_prefix: "/move_base/TebLocalPlannerROS"    # ROS topic/service prefix. No trailing of "/".
+                                                     # ["/move_base/TebLocalPlannerROS", "/move_base_gpf"]
+
+## SLAM params.
+slam_methods: ["slam_toolbox"]  # SLAM method names.
+enable_gt_slam_method: false    # Flag to turn on slam_toolbox alongside with running other SLAM methods.
+enable_wheel_odometry: false    # Flag to disturb wheel odometry, valid for simulation only!
+save_map: false                 # Flag to save the grid map after each trial.
+
+## MSF params.
+# enable_msf: true
+# slam_sensor_type: "stereo"
+# source_msg_parent_frame: "base_footprint"
+# source_msg_child_frame: "gyro_link"

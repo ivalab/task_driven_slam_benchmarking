@@ -9,6 +9,9 @@ The robot init pose is defined in `x, y, z, yaw` order with the units of `meters
 
     name: aws_small_house
     robot_init_pose: [0.0, 0.0, 0.0, 0.0]
+
+    name: aws_hospital
+    robot_init_pose: [0.0, 10.0, 0.0, 0.0]
     
 ## TSRB World
     

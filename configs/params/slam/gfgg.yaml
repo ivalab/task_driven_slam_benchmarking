@@ -1,0 +1,10 @@
+# gfgg
+slam_method: "gfgg"
+mode: "slam"
+good_feature_num: 400
+enable_msf: false
+slam_sensor_type: "stereo"
+source_msg_parent_frame: "left_camera_frame"
+source_msg_child_frame: "left_camera_optical_frame" # "gyro_link" # msf
+loops: 1
+need_map_to_odom_tf: true

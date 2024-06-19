@@ -1,11 +1,12 @@
 # closedloop_nav_slam
 
-This file provides steps to install and run ros packages on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
+This file provides steps to install and run the closedloop_nav_slam benchmark on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
 
 ## Install
 1. Install wstool.
         
         sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall python3-pip
+        pip install rospkg
 
 2. Install sensor drivers (for real robot testing) and other libs.
 
@@ -26,24 +27,26 @@ This file provides steps to install and run ros packages on both gazebo and real
 
         cd ~/catkin_ws && wstool init src
 
-        wstool merge -t src src/closedloop_nav_slam/closedloop.rosinstall # turtlebot packages
+        wstool merge -t src src/closedloop_nav_slam/turtlebot2.rosinstall
 
         wstool update -t src -j20
         rosdep install --from-paths src -i -y
 
-4. Build ROS Nodes.
+4. Build Turtlebot2 Nodes.
 
         cd ~/catkin_ws
         catkin build -j8 -DCMAKE_BUILD_TYPE=Release
 
-5. Install non-ROS Code.
+5. Build Other ROS Nodes.
 
-        cd ~/catkin_ws/src/closedloop_nav_slam/scripts
-        pip install -e .
-
+        cd ~/catkin_ws
+        wstool merge -t src src/closedloop_nav_slam/closedloop_nav_slam.rosinstall
+        wstool update -t src -j20
+        rosdep install --from-paths src -i -y
+        catkin build -j8 -DCMAKE_BUILD_TYPE=Release
 
 6. Build SLAM methods.
-   Please follow the REAME in each repo to build the library.
+Please follow the README of each repo to build the SLAM library.
 
    - [slam_toolbox](https://github.com/ivalab/slam_toolbox)
    - [hector_slam](https://github.com/ivalab/hector_slam)
@@ -60,10 +63,10 @@ This file provides steps to install and run ros packages on both gazebo and real
 [RealWorldTest](RealWorldTest.md)
 
 
-## Run Simulation
+## Run Gazebo Simulation
 
 
-**!!! Please remember to source the workspace in each new terminal.!!!**
+**!!! Please source ros workspace in each terminal.!!!**
     
     source catkin_ws/devel/setup.bash
 
@@ -74,53 +77,65 @@ This file provides steps to install and run ros packages on both gazebo and real
 
    2. Set them in the config file.
    
-        [scripts/closedloop_nav_slam/settings/config.yaml](scripts/closedloop_nav_slam/settings/config.yaml)
+        [configs/params/config.yaml](configs/params/config.yaml)
 
 2. Start launch files.
 ```bash
 # Start roscore.
 roscore
 
-# Start gazebo.
+# Start gazebo, default w/o vlp16. To enable gazebo gui add "gui:=true"
 roslaunch closedloop_nav_slam gazebo_turtlebot.launch
-
-# (Optional) How to use vlp16 in gazebo.
+# Use the following with vlp16.
 # roslaunch closedloop_nav_slam gazebo_turtlebot.launch laser_type:=vlp16
 
 # Run onekey testing script.
 roscd closedloop_nav_slam
-
-cd scripts/closedloop_nav_slam/ros
-
+cd scripts/nodes/
 python onekey.py
 
 ```
+#### Parameters Tuning
 
+1. The main config file [`config.yaml`](configs/params/config.yaml).
+It mainly defines the running parameters, ros topics, env name, slam_methods names, e.t.c.
+
+2. Navgition parameters [`nav`](configs/params/nav/)
+
+3. SLAM parameters [`slam`](configs/params/slam/)
+
+4. Map files [`map`](configs/map/)
+
+5. Path files [`path`](configs/path/)
+
+
+
+---
 ## Extension
-### Add a new SLAM method.
-1. Define a new class called `${SLAM_NAME}Node` in `scripts/closedloop_nav_slam/modular/slam_module.py`. For example, when adding `amcl`:
+### Steps to add a new SLAM method
+1. Define a new class named `${SLAM_NAME}Node` in [`slam_module.py`](scripts/closedloop_nav_slam/utils/slam_module.py). Here is an example of adding `amcl`:
 
 ```python
     class AmclNode(NodeBase):
     def __init__(self, params: Dict):
-        # Define the rosnode names when using amcl. It includes amcl itself and any other helper/tool nodes amcl needs.
+        # Define the rosnode names when launching amcl, including amcl and other accessory nodes that amcl requires.
         names = ["amcl", "slam_map_server"]
         super().__init__(names, params)
 
     def compose_start_cmd(self) -> str:
-        # Defines the amcl start command.
+        # Defines the ros command to start amcl.
         return (
             "roslaunch closedloop_nav_slam amcl.launch output_pose_topic:="
             + self._params["et_pose_topic"]
         )
 ```
-2. Add the new method to the factory class in `scripts/closedloop_nav_slam/modular/slam_module.py`. It direcly maps the `slam_method_name` to the defined `slam_node` class.
+2. Add the new method to factory class in [`slam_module.py`](scripts/closedloop_nav_slam/modular/slam_module.py). It simply maps the `slam_method_name` to the `slam_node` class.
 ```python
 def CreateSlamNode(params: Dict) -> NodeBase:
     ...
 ```
 
-3. Add slam parameters in `scripts/closedloop_nav_slam/settings/slam/slam_method.yaml`. For example: 
+3. Add slam parameters in [`{SLAM_NAME.yaml}`](configs/params/slam/). For example:
 ```yaml
 ## amcl
 slam_method: "amcl"
@@ -133,8 +148,10 @@ loops: 1 # Define the number of loops in a single trial.
 need_map_to_odom_tf: false # Whether needs an additional map_to_odom_tf publisher node. Most 2D laser methods in ros publish this tf inside their class. Some do not and need this publisher node.
 ```
 
-### Define Waypoints From A Known Map.
-```
+### Steps to Manually Extract/Define Waypoints From A Known Map.
+
+Set the map in launch file [`map.launch`](launch/realworld/map.launch)
+```bash
 # First set the proper map file in the launch file.
 roslaunch closedloop_nav_slam map.launch
 
@@ -146,9 +163,6 @@ rviz -d launch/closedloop_viz.rviz
 
 # The waypoints will be saved under `scripts/closedloop_nav_slam/ros/` and can later be moved to `configs/path/`
 ```
-
-## Evaluation
-Please follow the [steps](scripts/closedloop_nav_slam/evaluation/README.md).
 
 ## Issue Tracking.
 - How to disable odom_to_base tf from kobuki_gazebo?

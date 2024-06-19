@@ -140,7 +140,12 @@ void MapToOdomPublisher::Run()
     ros::Rate r(1.0 / transform_publish_period_);
     while (ros::ok())
     {
-        if (msg_header_.stamp.toSec() > 0.0 && !msg_header_.frame_id.empty())
+        if (msg_header_.stamp.toSec() <= 0.0)
+        //  && !msg_header_.frame_id.empty())
+        {
+            ROS_WARN("MapToOdom Publisher: Pose/Odom msg is NOT received.");
+        }
+        else
         {
             geometry_msgs::TransformStamped msg;
             tf2::convert(map_to_odom_, msg.transform);
