@@ -1,7 +1,8 @@
 ## Common params.
 
 # Directory where the running data is saved.
-result_dir: /mnt/DATA/experiments/closedloop_nav_slam/cl_nav_slam_test/
+result_dir: /tmp/cl_nav_slam/
+# result_dir: /mnt/DATA/experiments/closedloop_nav_slam/cl_nav_slam_test/
 # result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
 # result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 

@@ -5,7 +5,7 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
 ## Install
 1. Install wstool.
         
-        sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall python3-pip
+        sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall python3-pip python-is-python3
         pip install rospkg
 
 2. Install sensor drivers (for real robot testing) and other libs.
@@ -13,6 +13,7 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
         sudo apt install ros-noetic-urg-node # hokuyo laser
         sudo apt install ros-noetic-realsense2-camera # realsense camera
         sudo apt install ros-noetic-realsense2-description # camera urdf
+        sudo apt install ros-noetic-navitation # navigation stack
         sudo apt install ros-noetic-teb-local-planner # move_base
         sudo apt install ros-noetic-sparse-bundle-adjustment # slam_toolbox
         sudo apt install ros-noetic-pointcloud-to-laserscan # 3d pointcloud to 2d laser scan
@@ -50,7 +51,7 @@ Please follow the README of each repo to build the SLAM library.
 
    - [slam_toolbox](https://github.com/ivalab/slam_toolbox)
    - [hector_slam](https://github.com/ivalab/hector_slam)
-   - [gf_orb_slam2](https://github.com/ivalab/gf_orb_slam2)
+   - [gf_orb_slam2](https://github.com/ivalab/gf_orb_slam2/tree/feature/ubuntu20.04)
    - [orb3](https://github.gatech.edu/RoboSLAM/ORB_SLAM3)
    - [msckf](https://github.gatech.edu/RoboSLAM/msckf_vio)
    - [dsol](https://github.gatech.edu/RoboSLAM/dsol)
@@ -93,8 +94,20 @@ roslaunch closedloop_nav_slam gazebo_turtlebot.launch
 roscd closedloop_nav_slam
 cd scripts/nodes/
 python onekey.py
+# The results are saved to the directory defined in config.yaml.
 
+# Start rviz.
+roscd closedloop_nav_slam
+cd launch
+rviz -d closedloop_viz.rviz
+
+# Generally, the script ends smoothly after the testing is done.
+# If the script fails for any reason and cannot be terminated, please use 
+# the kill_onekey_script.sh to shut it down.
+cd scripts/nodes/tools/
 ```
+[`./kill_onekey_script.sh`](scripts/nodes/tools/kill_onekey_script.sh)
+
 #### Parameters Tuning
 
 1. The main config file [`config.yaml`](configs/params/config.yaml).
