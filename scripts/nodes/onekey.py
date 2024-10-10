@@ -9,6 +9,8 @@
 @desc None
 """
 
+import signal
+import sys
 import subprocess
 import time
 from pathlib import Path
@@ -245,8 +247,24 @@ class CentralManager:
             rospy.loginfo(f"Done {method_name}")
 
 
+def signal_handler(sig, frame):
+    """_summary_
+
+    Args:
+        sig (_type_): _description_
+        frame (_type_): _description_
+    """
+    rospy.loginfo("Shutdown request received (Ctrl+C or system call). Exiting node.")
+    rospy.signal_shutdown("User requested shutdown")
+    sys.exit(0)  # Ensure the process exits immediately after signal shutdown
+
+
 def main():
     """_summary_"""
+    # Register signal handler to catch Ctrl+C or system-level shutdown signals.
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    # Start manager.
     try:
         cm = CentralManager(PARAMS_PATH / "config.yaml")
         cm.run()

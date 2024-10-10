@@ -10,13 +10,14 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
 
 2. Install sensor drivers (for real robot testing) and other libs.
 
-        sudo apt install ros-noetic-urg-node # hokuyo laser
-        sudo apt install ros-noetic-realsense2-camera # realsense camera
-        sudo apt install ros-noetic-realsense2-description # camera urdf
-        sudo apt install ros-noetic-navitation # navigation stack
-        sudo apt install ros-noetic-teb-local-planner # move_base
+        sudo apt install ros-noetic-urg-node                 # hokuyo laser
+        sudo apt install ros-noetic-realsense2-camera        # realsense camera
+        sudo apt install ros-noetic-realsense2-description   # camera urdf
+        sudo apt install ros-noetic-navitation               # navigation stack
+        sudo apt install ros-noetic-teb-local-planner        # move_base
         sudo apt install ros-noetic-sparse-bundle-adjustment # slam_toolbox
-        sudo apt install ros-noetic-pointcloud-to-laserscan # 3d pointcloud to 2d laser scan
+        sudo apt install ros-noetic-pointcloud-to-laserscan  # 3d pointcloud to 2d laser scan
+        sudo apt install ros-noetic-imu-transformer          # imu transfomer
 
 3. Initialize workspace.
 
