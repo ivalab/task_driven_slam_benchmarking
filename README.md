@@ -1,3 +1,5 @@
+Please see the real-world test results [here](./results/realworld/README.md).
+
 # closedloop_nav_slam
 
 This file provides steps to install and run the closedloop_nav_slam benchmark on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
@@ -24,8 +26,8 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
         mkdir -p ~/catkin_ws/src
         cd ~/catkin_ws/src
         
-        git clone git@github.gatech.edu:RoboSLAM/closedloop_nav_slam.git
-        # For non-ssh user, please use link: https://github.gatech.edu/RoboSLAM/closedloop_nav_slam.git
+        git@github.com:ivalab/task_driven_slam_benchmarking.git
+        # For non-ssh user, please use link: https://github.com/ivalab/task_driven_slam_benchmarking.git
 
         cd ~/catkin_ws && wstool init src
 
