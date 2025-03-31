@@ -38,8 +38,8 @@ from closedloop_nav_slam.utils.slam_module import (
 )
 
 
-class CentralManager:
-    """Central Manager"""
+class RosNodeManager:
+    """_summary_"""
 
     def __init__(self, config_file: Path):
         """_summary_
@@ -67,6 +67,7 @@ class CentralManager:
         # We used this message signal to determine if a path navigation has been completed.
         self._sub = rospy.Subscriber("/visited_waypoints", PathMsg, self.__path_callback)
         self._stop = False
+        self._launched_nodes = []
 
     def __load_params(self, config_file: Path):
         params = None
@@ -97,8 +98,12 @@ class CentralManager:
         print(cmd)
         subprocess.call(cmd, shell=True)
 
-    def run(self):
+    def start(self):
         """_summary_"""
+        # Register signal handler to catch Ctrl+C or system-level shutdown signals.
+        signal.signal(signal.SIGINT, self.__shutdown)
+        signal.signal(signal.SIGTERM, self.__shutdown)
+
         for method_index, method_name in enumerate(self._common_params["slam_methods"]):
             method_dir = self._prefix / method_name
             method_dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +114,7 @@ class CentralManager:
                 rospy.loginfo(f"Navigate path file: {pfile} ... ")
 
                 for trial in range(params["trials"]):
-                    rospy.loginfo(f"Trial: {trial}")
+                    rospy.loginfo(f"Start Trial: {trial}")
 
                     # Create postfix for realworld test to differentiate trials
                     postfix = "_" + time.strftime("%Y%m%d-%H%M%S") if "realworld" == params["test_type"] else ""
@@ -124,6 +129,7 @@ class CentralManager:
                     rospy.loginfo("Start waypoints navigator ...")
                     wpt_nav_node = WaypointsNavigatorNode(params, pfile, str(path_dir))
                     wpt_nav_node.start()
+                    self._launched_nodes.append(wpt_nav_node)
                     time.sleep(5.0)
 
                     # - Compose robot bash script
@@ -141,12 +147,14 @@ class CentralManager:
                         rospy.loginfo("Start GT SLAM Method.")
                         gt_slam_node = GroundTruthSlamNode(params)
                         gt_slam_node.start()
+                        self._launched_nodes.append(gt_slam_node)
                         time.sleep(5.0)
 
                     # - Start slam
                     rospy.loginfo("Start SLAM ...")
                     slam_node = CreateSlamNode(params)
                     slam_node.start()
+                    self._launched_nodes.append(slam_node)
                     time.sleep(5.0)
 
                     # - Start msf
@@ -155,6 +163,7 @@ class CentralManager:
                         rospy.loginfo("Start MSF ...")
                         msf_node = MsfNode(params)
                         msf_node.start()
+                        self._launched_nodes.append(msf_node)
                         time.sleep(10.0)
                     # elif "perfect_odometry" != method_name:
                     #     print("MSF disabled, start odometry converter node ...")
@@ -168,12 +177,14 @@ class CentralManager:
                         rospy.loginfo("Start map_to_odom_publisher")
                         m2o_tf_node = MapToOdomPublisherNode(params)
                         m2o_tf_node.start()
+                        self._launched_nodes.append(m2o_tf_node)
                         time.sleep(3.0)
 
                     # - Start move_base
                     rospy.loginfo("Start move_base ...")
                     mb_node = MoveBaseNode(params)
                     mb_node.start()
+                    self._launched_nodes.append(mb_node)
                     time.sleep(10.0)
 
                     # # - Set move_base params
@@ -187,6 +198,7 @@ class CentralManager:
                         rospy.loginfo("start wo ...")
                         wo_node = WheelOdometryNode(params)
                         wo_node.start()
+                        self._launched_nodes.append(wo_node)
                         time.sleep(1.0)
 
                     # - Start robot
@@ -210,66 +222,76 @@ class CentralManager:
                         self.__save_map(method_name, pfile, trial)
 
                     # - Stop nodes.
-                    if gt_slam_node:
-                        rospy.loginfo("Killing gt slam method ...")
-                        gt_slam_node.stop()
-                        time.sleep(3)
+                    self.__stop_all_nodes()
+                    # if gt_slam_node:
+                    #     rospy.loginfo("Killing gt slam method ...")
+                    #     gt_slam_node.stop()
+                    #     time.sleep(3)
 
-                    # - Stop navigation script
-                    rospy.loginfo("Killing waypoints_navigator ...")
-                    wpt_nav_node.stop()
-                    time.sleep(5)
+                    # # - Stop navigation script
+                    # rospy.loginfo("Killing waypoints_navigator ...")
+                    # wpt_nav_node.stop()
+                    # time.sleep(5)
 
-                    # - Stop wheel odometry node
-                    if wo_node:
-                        rospy.loginfo("Killing wo ...")
-                        wo_node.stop()
-                        time.sleep(1)
+                    # # - Stop wheel odometry node
+                    # if wo_node:
+                    #     rospy.loginfo("Killing wo ...")
+                    #     wo_node.stop()
+                    #     time.sleep(1)
 
-                    # - Stop move_base
-                    rospy.loginfo("Killing move_base ...")
-                    mb_node.stop()
-                    time.sleep(5)
+                    # # - Stop move_base
+                    # rospy.loginfo("Killing move_base ...")
+                    # mb_node.stop()
+                    # time.sleep(5)
 
-                    # - Killing SLAM
-                    rospy.loginfo("Killing SLAM ...")
-                    if m2o_tf_node:
-                        m2o_tf_node.stop()
-                        time.sleep(3.0)
-                    if msf_node:
-                        msf_node.stop()
-                        time.sleep(5)
-                    slam_node.stop()
-                    time.sleep(5)
+                    # # - Killing SLAM
+                    # rospy.loginfo("Killing SLAM ...")
+                    # if m2o_tf_node:
+                    #     m2o_tf_node.stop()
+                    #     time.sleep(3.0)
+                    # if msf_node:
+                    #     msf_node.stop()
+                    #     time.sleep(5)
+                    # slam_node.stop()
+                    # time.sleep(5)
 
-                    rospy.loginfo(f"Done trial {trial}")
+                    rospy.loginfo(f"Done Trial {trial}")
                 rospy.loginfo(f"Done {pfile}")
             rospy.loginfo(f"Done {method_name}")
 
+    def __stop_all_nodes(self):
+        """_summary_"""
+        rospy.loginfo("Stopping all nodes ...")
+        for node in self._launched_nodes:
+            try:
+                rospy.loginfo(f"Terminating {node.name()}...")
+                node.stop()
+                time.sleep(5)
+            except Exception as e:
+                rospy.logerr(f"Error terminating {node.name()}: {e}")
 
-def signal_handler(sig, frame):
-    """_summary_
+    def __shutdown(self, signum=None, frame=None):
+        """_summary_
 
-    Args:
-        sig (_type_): _description_
-        frame (_type_): _description_
-    """
-    rospy.loginfo("Shutdown request received (Ctrl+C or system call). Exiting node.")
-    rospy.signal_shutdown("User requested shutdown")
-    sys.exit(0)  # Ensure the process exits immediately after signal shutdown
+        Args:
+            signum (_type_, optional): _description_. Defaults to None.
+            frame (_type_, optional): _description_. Defaults to None.
+        """
+        rospy.loginfo("Shutdown request received... Terminating all launched nodes.")
+        self.__stop_all_nodes()
+        rospy.loginfo("All nodes terminated. Exiting.")
+        rospy.signal_shutdown("Shutdown complete.")  # Signal shutdown to ROS
+        sys.exit(0)  # Ensure the program exits
 
 
 def main():
     """_summary_"""
-    # Register signal handler to catch Ctrl+C or system-level shutdown signals.
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
     # Start manager.
+    manager = RosNodeManager(PARAMS_PATH / "config.yaml")
     try:
-        cm = CentralManager(PARAMS_PATH / "config.yaml")
-        cm.run()
+        manager.start()
     except rospy.ROSInterruptException:
-        rospy.loginfo("CM exception caught !!!")
+        rospy.loginfo("RosNodeManager: exception caught !!!")
 
 
 if __name__ == "__main__":

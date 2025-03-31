@@ -1,12 +1,12 @@
 ## Common params.
 
 # Directory where the running data is saved.
-result_dir: /tmp/cl_nav_slam/
+# result_dir: /tmp/cl_nav_slam/
 # result_dir: /mnt/DATA/experiments/closedloop_nav_slam/cl_nav_slam_test/
-# result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
+result_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
 # result_dir: /home/yanwei/slam_ws/result/cl_nav_slam_test/
 
-test_type: "gazebo"                    # Defines the test type: [gazebo, realworld]
+test_type: "realworld"                    # Defines the test type: [gazebo, realworld]
 gt_odom_topic: "/ground_truth/odom"    # Ground truth odometry topic name.
 robot_odom_topic: "/odom"              # Robot odometry topic name (wheel odom mostly).
 et_odom_topic: "/visual/odom"          # Estimated odometry topic.
@@ -15,17 +15,18 @@ et_pose_topic: "/visual/pose"          # Estimated pose topic.
 save_results: true                     # Flag to toggle running results saving.
 
 ## Map/World parmeters.
-env_name: "aws_hospital"               # World/map name.
-robot_init_pose: [0, 10, 0.0, 0.0]     # Robot start location:  (x, y, z, theta), must be the same as in gazebo launch.
+env_name: "realworld"               # World/map name.
+robot_init_pose: [0, 0, 0.0, -1.57]     # Robot start location:  (x, y, z, theta), must be the same as in gazebo launch.
                                        # Other maps: {
                                        #     "aws_small_warehouse": [0,  0, 0.034, 0]
                                        #     "aws_small_house":     [0,  0, 0, 0]
                                        #     "aws_small_hosptial":  [0, 10, 0, 0]
                                        #     "tsrb":                [-40, 14, 0, 0]
+                                       #     "classroom":           [9, -5, 0, 3.1415926]
                                        # }
                                        #
-path_files: ["path0"]                  # Define the path file.
-trials: 10                             # Define the trials/rounds (loops are defined in each slam method).
+path_files: ["path4"]                  # Define the path file.
+trials: 1                             # Define the trials/rounds (loops are defined in each slam method).
                                        # In realworld test, this value must be 1, because the robot requires 
                                        # manually reset after each trial.
 

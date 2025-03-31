@@ -7,7 +7,8 @@ ROS_WS=$1
 TRACK_LOG_PATH=$2
 FEATURE_NUM=$3
 SLAM_POSE_TOPIC=$4
-LAUNCH_FILE_NAME=gazebo_ORB3_stereo.launch # ORB3_d435i.launch
+# LAUNCH_FILE_NAME=gazebo_ORB3_stereo.launch # ORB3_d435i.launch
+LAUNCH_FILE_NAME=ORB3_d435i.launch # ORB3_d435i.launch
 
 cd $ROS_WS
 source devel/setup.bash

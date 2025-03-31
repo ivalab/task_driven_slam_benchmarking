@@ -4,11 +4,11 @@
 
 # Source ros workspace.
 ROS_WS=$1
-ROS_WS=/home/yanwei/roboslam_ws/
+ROS_WS=/home/roboslam/closedloop_ws/
 TRACK_LOG_PATH=$2
 GOOD_FEATURE_NUM=$3
 SLAM_POSE_TOPIC=$4
-LAUNCH_FILE_NAME=gazebo_GF_stereo.launch # RW: GF_d435i.launch
+LAUNCH_FILE_NAME=GF_d435i.launch # RW: GF_d435i.launch
 
 cd $ROS_WS
 source devel/setup.bash

@@ -1,0 +1,13 @@
+<launch>
+
+
+    <arg name="urdf_file" default="$(find xacro)/xacro '$(find closedloop_nav_slam)/configs/urdf/realworld/kobuki_hexagons_laser_d435i.urdf.xacro'" /> 
+    <param name="robot_description" command="$(arg urdf_file)" />  
+  
+    <!-- Robot state publisher-->
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" respawn="true">
+        <param name="publish_frequency" type="double" value="20.0" />
+        <param name="use_tf_static" type="bool" value="true" />
+    </node>
+
+</launch>

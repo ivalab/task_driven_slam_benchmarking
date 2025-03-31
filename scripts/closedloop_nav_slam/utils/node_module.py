@@ -17,14 +17,18 @@ from typing import Dict
 
 
 class NodeBase(ABC):
-    def __init__(self, names: list, params: Dict):
-        self._names = names
+    def __init__(self, name: str, nodes: list, params: Dict):
+        self._name = name
+        self._nodes = nodes
         self._params = params
-        assert len(self._names) > 0
+        assert len(self._nodes) > 0
         assert self._params
 
-    def names(self) -> list:
-        return self._names
+    def name(self) -> str:
+        return self._name
+
+    def nodes(self) -> list:
+        return self._nodes
 
     def start(self) -> bool:
         cmd = self.compose_start_cmd()
@@ -34,8 +38,8 @@ class NodeBase(ABC):
         return True
 
     def stop(self) -> bool:
-        for name in self.names():
-            subprocess.call("rosnode kill /" + name, shell=True)
+        for node in self.nodes():
+            subprocess.call("rosnode kill /" + node, shell=True)
         return True
 
     @abstractmethod
@@ -49,8 +53,8 @@ class NodeBase(ABC):
 
 class MoveBaseNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["move_base", "navigation_velocity_smoother"]
-        super().__init__(names, params)
+        nodes = ["move_base", "navigation_velocity_smoother"]
+        super().__init__("MoveBase", nodes, params)
 
     def compose_start_cmd(self) -> str:
         cmd = (
@@ -70,7 +74,7 @@ class MoveBaseNode(NodeBase):
 
 class WaypointsNavigatorNode(NodeBase):
     def __init__(self, params: Dict, path_file: str, output_dir: str):
-        super().__init__(["waypoints_navigator"], params)
+        super().__init__("WptNavigator", ["waypoints_navigator"], params)
         self._path_file = path_file
         self._output_dir = output_dir
 
@@ -124,8 +128,8 @@ class WaypointsNavigatorNode(NodeBase):
 
 class MapToOdomPublisherNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["map_to_odom_publisher"]
-        super().__init__(names, params)
+        nodes = ["map_to_odom_publisher"]
+        super().__init__("MapToOdom", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return (

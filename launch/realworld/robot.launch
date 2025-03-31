@@ -1,5 +1,6 @@
 <launch>
     <arg name="enable_depth"        default="true"/>
+    <arg name="enable_color"        default="true"/>
     <arg name="serialport"          default="/dev/rplidar"/>
     <arg name="enable_laser_filter" default="true"/>
 
@@ -22,6 +23,7 @@
     <!-- camera -->
     <include file="$(find closedloop_nav_slam)/launch/realworld/realsense_stereo_nodelet.launch">
         <arg name="enable_depth" value="$(arg enable_depth)" />
+        <arg name="enable_color" value="$(arg enable_color)" />
     </include>
  
 </launch>

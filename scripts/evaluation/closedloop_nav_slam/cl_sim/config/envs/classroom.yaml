@@ -1,0 +1,2 @@
+robot_init_pose: [9.0, -5.0, 0, 3.141592653] # x, y, 0, theta
+path: ["path0"]

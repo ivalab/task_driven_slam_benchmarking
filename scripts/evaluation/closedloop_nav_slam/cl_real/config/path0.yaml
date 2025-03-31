@@ -1,0 +1,2 @@
+wpts_count:             4  # The number of wpts in the path.
+wpts_skipping_indices: [3] # These wpts can NOT be captured by cameras.

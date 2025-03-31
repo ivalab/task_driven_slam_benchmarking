@@ -3,9 +3,9 @@
 <arg name="path_data_logging" default = "/home/roboslam/slam_ws/data/rosbags/turtlebot"/>
 <arg name="topics" default = "-a"/>
 
-<!-- initialize rosbag recording -->
+<!-- initialize rosbag recording, the bags will be compressed and splited -->
 <node name="data_logging" type="record" pkg="rosbag" 
-    args="-O $(arg path_data_logging).bag $(arg topics) -x '(.*)theora(.*)|(.*)compressed(.*)'">
+    args="--split --size=10240 --lz4 -O $(arg path_data_logging).bag $(arg topics) -x '(.*)theora(.*)|(.*)compressed(.*)'">
 </node>
 
 <!-- To depress error messages from realsense node when using rosbag record. -->

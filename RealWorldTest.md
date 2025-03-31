@@ -1,17 +1,11 @@
-# closedloop_nav_slam
-
-## Real World Test Steps
+## Steps to Run Real World Tests
 
 **!!! Please remember to source the workspace in each new terminal.!!!**
     
-    source catkin_ws/devel/setup.bash
+    source ~/catkin_ws/devel/setup.bash
 
 **All the following steps should be executed on the laptop (can through `ssh`) which connects to the turtlebot.**
 
-### Connect Hardware
-- [ ] Connect the usb hub cable to the laptop.
-- ~~[ ] Connect d435i camera cable to the laptop.~~
-- [ ] Turn on the turtlebot.
 
 ### Activate Sensors
 ```bash
@@ -55,17 +49,17 @@ roslaunch closedloop_nav_slam realsense_stereo_nodelet.launch enable_depth:=true
 
 - **Define Waypoints**
     [Tutorial](README.md)
-    - [ ] Save map to `configs/map/realworld/`
-    - [ ] Save waypoints and path to `configs/path/realworld/`
+    - Save map to `configs/map/realworld/`
+    - Save waypoints and path to `configs/path/realworld/`
 
-### Main test
+### Run the Benchmarking.
 **1. Set parameters.**
-- [ ] **Shutdown** `move_base` and `slam_toolbox` launched in the Mapping phase. (skip if not on)
-- [ ] Set the correct map and robot init pose in the following file.
+- **Shutdown** `move_base` and `slam_toolbox` launched in the Mapping phase. (skip if they are not on)
+- Set the correct `map` and `robot init pose` in the following file.
 
     [launch/realworld/map.launch](launch/realworld/map.launch)
 
-- [ ] Set running parameters in the following file
+- Set the parameters in the following file
 
     [config.yaml](configs/params/config.yaml)
 

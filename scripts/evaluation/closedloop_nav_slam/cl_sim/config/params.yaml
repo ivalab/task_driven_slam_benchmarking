@@ -1,0 +1,53 @@
+############################################################
+# Running Parameters (Should stay fixed most of the time)  #
+############################################################
+
+## Move base params.
+# nav_name: "gpf"
+# mov_base_prefix: "/move_base_gpf"
+goal_reached_orient_thresh: 0.25 # rad # 0.25
+goal_reached_thresh: 0.2 # meters # 0.1
+nav_name: "teb"
+move_base_prefix: "/move_base/TebLocalPlannerROS" # No trailing of "/".
+
+#########################
+# Evaluation Parameters #
+#########################
+
+# Directory where the running data is saved.
+# data_dir: /mnt/DATA/experiments/good_graph/taskdriven/
+# data_dir: /home/roboslam/slam_ws/result/cl_nav_slam_test/
+data_dir: /mnt/DATA/experiments/cl_nav_slam/closedloop/gazebo
+
+result_dir: "/tmp"             # Define the result output dir where the evaluation result is saved.
+save_evaluation: True          # Whether to save evaluation data.
+evaluation_prefix: ""          # The prefix string when saving evaluation data.
+overwrite_evaluation: True     # Whether to overwrite existing evaluation data.
+save_to_data_dir: True         # Whether to save evaluation data to provided result directory, will overwrite output_dir.
+load_evaluation: True          # Whether to load existing evaluation data.
+
+# Env yaml file defines robot_init_pose and path, including:
+# envs: ["tsrb", "aws_small_warehouse", "aws_small_house", "aws_hospital"] #, "aws_small_house", "aws_small_warehouse", "aws_hospital"]
+envs: ["tsrb"] #, "aws_small_warehouse", "tsrb", "aws_hospital"]
+mode: "localization"       # Mode: slam or localization.
+rounds: 1        # The number of rounds per each experiment.
+loops: 5           # The number of loops per each round.
+
+
+
+# Methods Candidates.
+# methods: ["slam_toolbox", "hector_slam"]                               # 2D laser.
+# methods: ["hdl_slam", "fast_lio2", "liorf"]                            # 3D lidar.
+# methods: ["gfgg", "orb3", "svo", "dsol", "msckf"]                      # Visual (camera).
+# methods: ["slam_toolbox", "gfgg", "orb3_new"]        # Map-Based (Localization Mode).
+# methods: ["slam_toolbox", "hector_slam", "fast_lio2", "liorf", "gfgg", "orb3_new", "svo", "dsol", "msckf"] # All.
+methods: ["slam_toolbox", "gfgg", "orb3_new", "liorf"] #, "liorf", "gfgg"]
+
+
+############################
+# Visualization Parameters #
+############################
+enable_visualization: True   # Flag to turn on/off visualization.
+grid_xy: 30.0                # Unit: cm. Define position xticks (turtlebot_size = 34.5 cm).
+grid_theta: 10.0             # Unit: degree. Define orientation xtikcs (camera_fov = 90.0 degree).
+save_figs: True              # Whether to save figures.

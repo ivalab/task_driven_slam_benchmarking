@@ -26,8 +26,8 @@ class PerfectOdometryNode(NodeBase):
     """
 
     def __init__(self, params: Dict):
-        names = ["map_to_odom_publisher"]
-        super().__init__(names, params)
+        nodes = ["map_to_odom_publisher"]
+        super().__init__("PerfectOdometry", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam perfect_odometry.launch"
@@ -41,8 +41,8 @@ class RobotOdometryNode(NodeBase):
     """
 
     def __init__(self, params: Dict):
-        names = ["slam_map_to_odom_publisher"]
-        super().__init__(names, params)
+        nodes = ["slam_map_to_odom_publisher"]
+        super().__init__("RobotOdometry", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam robot_odometry.launch"
@@ -56,8 +56,8 @@ class WheelOdometryNode(NodeBase):
     """
 
     def __init__(self, params: Dict):
-        names = ["wheel_odometry_publisher"]
-        super().__init__(names, params)
+        nodes = ["wheel_odometry_publisher"]
+        super().__init__("WheelOdometry", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "rosrun closedloop_nav_slam wheel_odometry_publisher.py"
@@ -66,8 +66,8 @@ class WheelOdometryNode(NodeBase):
 # 2D Laser SLAM
 class SlamToolboxNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["slam_toolbox"]
-        super().__init__(names, params)
+        nodes = ["slam_toolbox"]
+        super().__init__("SlamToolbox", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return (
@@ -78,8 +78,8 @@ class SlamToolboxNode(NodeBase):
 
 class HectorSlamNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["hector_mapping"]
-        super().__init__(names, params)
+        nodes = ["hector_mapping"]
+        super().__init__("HectorSLAM", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "roslaunch hector_mapping nav_slam_test.launch output_pose_topic:=" + self._params["et_pose_topic"]
@@ -87,8 +87,8 @@ class HectorSlamNode(NodeBase):
 
 class AmclNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["amcl", "slam_map_server"]
-        super().__init__(names, params)
+        nodes = ["amcl", "slam_map_server"]
+        super().__init__("AMCL", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam amcl.launch output_pose_topic:=" + self._params["et_pose_topic"]
@@ -96,8 +96,8 @@ class AmclNode(NodeBase):
 
 class GmappingNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["gmapping", "tf_to_pose_converter"]
-        super().__init__(names, params)
+        nodes = ["gmapping", "tf_to_pose_converter"]
+        super().__init__("Gmapping", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return "roslaunch closedloop_nav_slam gmapping.launch output_pose_topic:=" + self._params["et_pose_topic"]
@@ -105,8 +105,8 @@ class GmappingNode(NodeBase):
 
 class GroundTruthSlamNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["slam_toolbox"]
-        super().__init__(names, params)
+        nodes = ["slam_toolbox"]
+        super().__init__("GroundTruth", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return (
@@ -121,8 +121,8 @@ class GroundTruthSlamNode(NodeBase):
 # Visual SLAM.
 class GfggNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["visual_slam", "Stereo"]
-        super().__init__(names, params)
+        nodes = ["visual_slam", "Stereo"]
+        super().__init__("GF-GG", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "closedloop_ws")
@@ -143,8 +143,8 @@ class GfggNode(NodeBase):
 
 class Orb3Node(NodeBase):
     def __init__(self, params: Dict):
-        names = ["visual_slam", "Stereo"]
-        super().__init__(names, params)
+        nodes = ["visual_slam", "Stereo"]
+        super().__init__("ORB3", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "closedloop_ws")
@@ -165,8 +165,8 @@ class Orb3Node(NodeBase):
 
 class MsckfNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["msckf/vio", "msckf/image_processor"]
-        super().__init__(names, params)
+        nodes = ["msckf/vio", "msckf/image_processor"]
+        super().__init__("MSCKF", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "svo_ws")
@@ -187,8 +187,8 @@ class MsckfNode(NodeBase):
 
 class DsolNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["dsol_odom"]
-        super().__init__(names, params)
+        nodes = ["dsol_odom"]
+        super().__init__("DSOL", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "turtlebot_ws")
@@ -209,8 +209,8 @@ class DsolNode(NodeBase):
 
 class SvoNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["svo"]
-        super().__init__(names, params)
+        nodes = ["svo"]
+        super().__init__("SVO", nodes, params)
 
     def compose_start_cmd(self) -> str:
         # ROS_WS = os.path.join(os.environ["HOME"], "svo_ws")
@@ -233,8 +233,8 @@ class SvoNode(NodeBase):
 # Fusion node.
 class MsfNode(NodeBase):
     def __init__(self, params: Dict):
-        names = ["msf_pose_sensor", "odometry_converter", "visual_robot_publisher"]
-        super().__init__(names, params)
+        nodes = ["msf_pose_sensor", "odometry_converter", "visual_robot_publisher"]
+        super().__init__("MSF", nodes, params)
 
     def compose_start_cmd(self) -> str:
         return (
@@ -253,13 +253,13 @@ class MsfNode(NodeBase):
 # 3D Lidar SLAM
 class HdlSlamNode(NodeBase):
     def __init__(self, params: Dict):
-        names = [
+        nodes = [
             "hdl_graph_slam_nodelet",
             "prefiltering_nodelet",
             "scan_matching_odometry_nodelet",
             "velodyne_nodelet_manager",
         ]
-        super().__init__(names, params)
+        super().__init__("HDL-SLAM", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
@@ -269,10 +269,10 @@ class HdlSlamNode(NodeBase):
 
 class FastLio2Node(NodeBase):
     def __init__(self, params: Dict):
-        names = [
+        nodes = [
             "laserMapping",
         ]
-        super().__init__(names, params)
+        super().__init__("FAST-LIO2", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")
@@ -282,12 +282,12 @@ class FastLio2Node(NodeBase):
 
 class LiorfNode(NodeBase):
     def __init__(self, params: Dict):
-        names = [
+        nodes = [
             "liorf_imageProjection",
             "liorf_imuPreintegration",
             "liorf_mapOptmization",
         ]
-        super().__init__(names, params)
+        super().__init__("LIO-SAM", nodes, params)
 
     def compose_start_cmd(self) -> str:
         ROS_WS = os.path.join(os.environ["HOME"], "catkin_ws")

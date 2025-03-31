@@ -1,0 +1,43 @@
+#########################
+# Running Parameters    #
+#########################
+load_detection:     False # Whether to load april detection result if exists.
+load_evaluation:    False  # Whether to load evaluation result if exists.
+vis_detection:      True  # Whether to enable online visualization, only works when load_detection is False.
+
+## {short path (path0): 0301, long path (path1): 0331, map_based_localization: 0406}
+
+# data_dir: /mnt/DATA/experiments/cl_nav_slam/closedloop/realworld/
+data_dir: /mnt/DATA/experiments/cl_nav_slam/closedloop/realworld/
+result_dir: "/tmp"             # Define the result output dir where the evaluation result is saved.
+save_to_data_dir: True         # Whether to save evaluation data to provided result directory, will overwrite output_dir.
+
+path: "path4"                  # Path file for evaluation.
+mode: "slam"                   # Mode: slam or localization.
+rounds: 5                      # The number of rounds per each experiment.
+loops: 1                       # The number of loops per each round.
+
+# Methods Candidates.
+# methods: ["slam_toolbox", "hector_slam"]                               # 2D laser.
+# methods: ["hdl_slam", "fast_lio2", "liorf"]                            # 3D lidar.
+# methods: ["gfgg", "orb3", "svo", "dsol", "msckf"]                      # Visual (camera).
+# methods: ["slam_toolbox", "fast_lio2", "liorf", "gfgg", "orb3"]        # Map-Based (Localization Mode).
+# methods: ["slam_toolbox", "hector_slam", "fast_lio2", "liorf", "gfgg", "orb3", "svo", "dsol", "msckf"] # All.
+methods: ["slam_toolbox", "fast_lio2", "liorf", "orb3", "svo", "gfgg"] # All.
+
+############################
+# Evaluation Parameters    #
+############################
+tag_size:           0.19 # Unit: meters.
+machine_delay:      2.0  # Unit: seconds. Machine time synchronization delay, 
+                         # usually within 1.0 seconds after ntp synchronization.
+max_timestamp_diff: 0.5  # Unit: seconds. Max timestamp diff when associating wpts
+                         # between overhead camera and laptop recording.
+
+
+############################
+# Visualization Parameters #
+############################
+grid_xy: 30.0     # Unit: cm. Define position xticks (turtlebot_size = 34.5 cm).
+grid_theta: 10.0  # Unit: degree. Define orientation xtikcs (camera_fov = 90.0 degree).
+save_figs: True   # Whether to save figures.

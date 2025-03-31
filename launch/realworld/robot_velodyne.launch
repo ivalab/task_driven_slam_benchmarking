@@ -1,0 +1,37 @@
+<launch>
+    <arg name="enable_depth"        default="true"/>
+    <arg name="serialport"          default="/dev/rplidar"/>
+    <arg name="enable_laser_filter" default="true"/>
+
+    <!-- robot -->
+    <include file="$(find closedloop_nav_slam)/launch/realworld/minimal.launch">
+    </include>
+
+    <!-- laser -->
+    <include file="$(find closedloop_nav_slam)/launch/realworld/rplidar_s2.launch">
+        <arg name="serialport" value="$(arg serialport)" />
+        <arg name="scan_topic" value="/scan_base" if="$(arg enable_laser_filter)"/>
+    </include>
+
+    <node pkg="laser_filters" type="scan_to_scan_filter_chain" name="laser_filter" if="$(arg enable_laser_filter)">
+        <rosparam command="load" file="$(find closedloop_nav_slam)/configs/params/sensor/laser_filter_config.yaml" />
+        <remap from="scan" to="/scan_base" />
+        <remap from="scan_filtered" to="/scan" />
+    </node>
+
+    <!-- camera -->
+    <include file="$(find closedloop_nav_slam)/launch/realworld/realsense_stereo_nodelet.launch">
+        <arg name="enable_depth" value="$(arg enable_depth)" />
+    </include>
+
+    <include file="$(find velodyne_pointcloud)/launch/VLP16_points.launch"/>
+	<node name="base_to_velodyne" pkg="tf" type="static_transform_publisher" args="0.0 0.063 0.19 0.0 0.0 0.0 1 base_link velodyne 10"/>
+
+    <!-- Imu transformation node -->
+    <node pkg="imu_transformer" type="imu_transformer_node" name="imu_transformer_node">
+        <param name="target_frame" value="gyro_link"/>
+        <remap from="/imu_in/data" to="/camera/imu"/>
+        <remap from="/imu_out/data" to="/imu0"/>
+    </node>
+
+</launch>

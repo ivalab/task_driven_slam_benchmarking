@@ -40,6 +40,11 @@ from nav_msgs.msg import Odometry
 from nav_msgs.msg import Path as PathMsg
 from std_msgs.msg import Header
 
+from message_filters import ApproximateTimeSynchronizer, Subscriber
+from sensor_msgs.msg import Image
+from cv_bridge import CvBridge
+import cv2
+
 
 class NavSlamTest:
     def __init__(self, args):
@@ -87,6 +92,21 @@ class NavSlamTest:
         rospy.Subscriber("/gt_pose", PoseWithCovarianceStamped, self.__groundTruthPoseCallback)
         rospy.Subscriber("/et_pose", PoseWithCovarianceStamped, self.__estimatedPoseCallback)
 
+        self._save_front_image = True
+        self._save_up_image = True
+        self._bridge = None
+        self._front_image = None
+        self._up_image = None
+        if self._save_front_image:
+            # rospy.Subscriber("/multisense_sl/camera/left/image_raw", Image, self.__frontImageCallback)
+            rospy.Subscriber("/camera/color/image_raw", Image, self.__frontImageCallback)
+            self._bridge = CvBridge()
+        if self._save_up_image:
+            # rospy.Subscriber("/multisense_sl/camera/right/image_raw", Image, self.__upImageCallback)
+            rospy.Subscriber("/pointgrey/image_rect_color", Image, self.__upImageCallback)
+            if self._bridge is None:
+                self._bridge = CvBridge()
+
         # ROS publisher.
         self._odom_reset_pub = rospy.Publisher(
             "/mobile_base/commands/reset_odometry", std_msgs.Empty, queue_size=1, latch=True
@@ -121,6 +141,32 @@ class NavSlamTest:
         rospy.spin()
 
         self.saveToFile()
+
+    def __frontImageCallback(self, color_msg):
+        """_summary_
+
+        Args:
+            color_msg (_type_): _description_
+            depth_msg (_type_): _description_
+        """
+        self._front_image = color_msg
+
+    def __upImageCallback(self, color_msg):
+        """_summary_
+
+        Args:
+            color_msg (_type_): _description_
+            depth_msg (_type_): _description_
+        """
+        self._up_image = color_msg
+
+    def __saveImage(self, goal_index, loop_count, im_msg, prefix=""):
+        im = self._bridge.imgmsg_to_cv2(im_msg, "bgr8")
+        timestamp = im_msg.header.stamp.to_sec()
+        filename = f"{prefix}_g{goal_index}_l{loop_count}_{timestamp:.9f}.jpg"
+        filepath = str(Path(self._output_dir) / filename)
+        cv2.imwrite(filepath, im)
+        rospy.loginfo("Color image saved to: %s" % filepath)
 
     def __buttonEventCallback(self, msg):
         if msg.state == ButtonEvent.PRESSED and msg.button == ButtonEvent.Button1:
@@ -211,39 +257,55 @@ class NavSlamTest:
         self._pose_array_pub.publish(pose_array)
 
     def __navigate(self):
-        while not rospy.is_shutdown():
-            if self._stop or not self._button_pressed:
-                rospy.loginfo_throttle(60, "WptNavigator: waiting for CMD to start the robot.")
-                rospy.sleep(0.2)
-                continue
-            try:
-                self._actual_path = PathMsg(header=Header(frame_id="/actual"))
-                success = True
-                for loop_count in range(self._loops):
-                    rospy.loginfo(f"----- Loop: {loop_count} -----")
-                    self.__publish_waypoints(self._goals)
-                    for goal_index, goal in enumerate(self._goals):
-                        rospy.loginfo(f"goal: \n {goal}")
-                        success = self.__navigateToGoal(goal_pose=goal)
-                        if not success:
-                            rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
-                            break
-                        rospy.sleep(self._idle_time)
-                        wpt_stamp = self._robot_odom.header.stamp
-                        self._actual_path.poses.append(PoseStamped(Header(stamp=wpt_stamp), goal))
-                        self._visited_wpts_nav_info.append([goal_index, loop_count])
-                    if not success:
-                        break
-                    rospy.loginfo(f"Sequencing finished: {loop_count}.")
-                rospy.loginfo("Publish planned path with timestamp.")
-                self._nav_path_pub.publish(self._actual_path)
-                rospy.loginfo("Done.")
-                self._stop = True
-                self._button_pressed = False
-                self._client.cancel_all_goals()
-            except Exception as e:
-                rospy.loginfo(e)
-            break
+        # Wait to start.
+        while self._stop or not self._button_pressed:
+            rospy.loginfo_throttle(60, "WptNavigator: waiting for CMD to start the robot.")
+            rospy.sleep(0.2)
+            if rospy.is_shutdown():
+                print("shutdown")
+                return
+
+        # Start
+        self._actual_path = PathMsg(header=Header(frame_id="/actual"))
+        success = True
+        for loop_count in range(self._loops):
+            rospy.loginfo(f"----- Loop: {loop_count} -----")
+            self.__publish_waypoints(self._goals)
+            for goal_index, goal in enumerate(self._goals):
+                rospy.loginfo(f"goal: \n {goal}")
+                try:
+                    success = self.__navigateToGoal(goal_pose=goal)
+                except rospy.ROSInterruptException:
+                    rospy.loginfo("ROSInterruptException caught in outer loop. Shutting down.")
+                    return
+                except KeyboardInterrupt:
+                    rospy.loginfo("KeyboardInterrupt caught in outer loop. Shutting down.")
+                    return
+                except Exception as e:
+                    rospy.logerr(f"Unhandled error in outer loop: {e}")
+                    return
+                if not success:
+                #    rospy.loginfo(f"Failed to reach goal: {goal}\n Mission Failed.")
+                #    break
+                    rospy.loginfo(f"Failed to reach goal: {goal}\n Moving to the next goal.")
+                    continue
+                rospy.sleep(self._idle_time)
+                wpt_stamp = self._robot_odom.header.stamp
+                self._actual_path.poses.append(PoseStamped(Header(stamp=wpt_stamp), goal))
+                self._visited_wpts_nav_info.append([goal_index, loop_count])
+                if self._save_front_image:
+                    self.__saveImage(goal_index, loop_count, self._front_image, "front")
+                if self._save_up_image:
+                    self.__saveImage(goal_index, loop_count, self._up_image, "up")
+            if not success:
+                break
+            rospy.loginfo(f"Sequencing finished: {loop_count}.")
+        rospy.loginfo("Publish planned path with timestamp.")
+        self._nav_path_pub.publish(self._actual_path)
+        rospy.loginfo("Done.")
+        self._stop = True
+        self._button_pressed = False
+        self._client.cancel_all_goals()
 
     def __navigateToGoal(self, goal_pose):
         # Create the goal point
@@ -257,18 +319,28 @@ class NavSlamTest:
         self._client.send_goal(goal)
         rospy.loginfo("Waiting for result ...")
 
-        r = rospy.Rate(5)
+        r = rospy.Rate(20)
 
         # start_time = rospy.Time.now()
-
         keep_waiting = True
         while keep_waiting and not rospy.is_shutdown():
             state = self._client.get_state()
             # print "State: " + str(state)
             if state is not GoalStatus.ACTIVE and state is not GoalStatus.PENDING:
                 keep_waiting = False
-            else:
+            try:
                 r.sleep()
+            except rospy.ROSInterruptException:
+                rospy.loginfo("Caught ROSInterruptException in inner loop.")
+                raise  # Re-raise to propagate to outer loop
+
+            except KeyboardInterrupt:
+                rospy.loginfo("Caught KeyboardInterrupt in inner loop.")
+                raise  # Re-raise to propagate to outer loop
+
+            except Exception as e:
+                rospy.logerr(f"Unexpected error in inner loop: {e}")
+                raise  # Re-raise to propagate the error to the outer loop
 
         state = self._client.get_state()
         return state == GoalStatus.SUCCEEDED

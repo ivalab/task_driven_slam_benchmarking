@@ -1,32 +1,50 @@
-Please see the real-world test results [here](./results/realworld/README.md).
+## Task-driven SLAM Benchmarking for Robot Navigation
+![sim](media/sim_aws_hospital_without_map.gif)
 
-# closedloop_nav_slam
+Task-driven SLAM benchmarking for robot navigation is designed to evaluate **SLAM performance** in the context of **real-world navigation tasks**. In this work, a robot navigation task is defined as a series of waypoints that the robot must visit across multiple trials. The framework assesses SLAM performance based on **Precision**, where a SLAM system achieves the highest Precision if it consistently reaches the same waypoint across trials with minimal variance. The animation illustrates the process of five SLAM methods-*SLAM_Toolbox(2D LiDAR, cyan), GF-GG (Stereo Visual, green), ORB_SLAM3 (Stereo Visual, red), FAST-LIO2(3D LiDAR, yellow), and LIO-SAM(3D LiDAR, blue)*-within a simulated hospital environment in a single trial.
 
-This file provides steps to install and run the closedloop_nav_slam benchmark on both gazebo and real turtlebot in **ROS Noetic** and **Ubuntu 20.04**.
+**Real world results are [available](media/results/realworld/README.md).**
+**Evaluation scripts can be found [here](scripts/evaluation/closedloop_nav_slam/README.md)**.
+
+## Citation
+If you find the benchmarking framework useful, please consider cite our paper:
+
+Du, Y., Feng, S., Cort, C.G. and Vela, P.A. Task-driven SLAM Benchmarking for Robot Navigation. arXiv preprint arXiv:2409.16573, 2024. [Link](https://arxiv.org/abs/2409.16573)
+
+```
+@inproceedings{Du2024TaskdrivenSlamBench,
+  title={Task-driven SLAM Benchmarking For Robot Navigation},
+  author={Yanwei Du and Shiyu Feng and Carlton G. Cort and Patricio A. Vela},
+  journal={arXiv preprint arXiv:2409.16573}
+  year={2024},
+}
+```
+
+## System Overview
+![alt text](media/benchmark_framework.png)
+
+The framework leverages the [ROS NavStack](https://wiki.ros.org/navigation/Tutorials/RobotSetup) without relying on additional third-party dependencies, aiming to provide the community with a tool for benchmarking SLAM and navigation algorithms in any environment of interest. It offers a portable approach for setting up ground truth measurements in real-world scenarios. For more details, please refer to the [paper](https://arxiv.org/abs/2409.16573).
 
 ## Install
+
+They system has been tested on **Ubuntu 20.04** & **ROS Noetic**.
+
 1. Install wstool.
         
         sudo apt-get install python3-rosdep  python3-wstool  build-essential python3-rosinstall-generator python3-rosinstall python3-pip python-is-python3
         pip install rospkg
 
-2. Install sensor drivers (for real robot testing) and other libs.
+2. Install ROS packages.
 
-        sudo apt install ros-noetic-urg-node                 # hokuyo laser
-        sudo apt install ros-noetic-realsense2-camera        # realsense camera
-        sudo apt install ros-noetic-realsense2-description   # camera urdf
         sudo apt install ros-noetic-navitation               # navigation stack
         sudo apt install ros-noetic-teb-local-planner        # move_base
-        sudo apt install ros-noetic-sparse-bundle-adjustment # slam_toolbox
-        sudo apt install ros-noetic-pointcloud-to-laserscan  # 3d pointcloud to 2d laser scan
-        sudo apt install ros-noetic-imu-transformer          # imu transfomer
 
 3. Initialize workspace.
 
         mkdir -p ~/catkin_ws/src
         cd ~/catkin_ws/src
         
-        git@github.com:ivalab/task_driven_slam_benchmarking.git
+        git clone git@github.com:ivalab/task_driven_slam_benchmarking.git
         # For non-ssh user, please use link: https://github.com/ivalab/task_driven_slam_benchmarking.git
 
         cd ~/catkin_ws && wstool init src
@@ -36,7 +54,7 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
         wstool update -t src -j20
         rosdep install --from-paths src -i -y
 
-4. Build Turtlebot2 Nodes.
+4. Build Turtlebot2 Packages.
 
         cd ~/catkin_ws
         catkin build -j8 -DCMAKE_BUILD_TYPE=Release
@@ -50,18 +68,15 @@ This file provides steps to install and run the closedloop_nav_slam benchmark on
         catkin build -j8 -DCMAKE_BUILD_TYPE=Release
 
 6. Build SLAM methods.
-Please follow the README of each repo to build the SLAM library.
+Please follow the README of each repo to build the SLAM library in the same ros workspace. (You don't need to build them all, just pick your favorite one.)
 
-   - [slam_toolbox](https://github.com/ivalab/slam_toolbox)
-   - [hector_slam](https://github.com/ivalab/hector_slam)
+   - [SLAM_Toolbox](https://github.com/ivalab/slam_toolbox)
+   - [Hector_SLAM](https://github.com/ivalab/hector_slam)
    - [gf_orb_slam2](https://github.com/ivalab/gf_orb_slam2/tree/feature/ubuntu20.04)
-   - [orb3](https://github.gatech.edu/RoboSLAM/ORB_SLAM3)
-   - [msckf](https://github.gatech.edu/RoboSLAM/msckf_vio)
-   - [dsol](https://github.gatech.edu/RoboSLAM/dsol)
-   - [svo](https://github.gatech.edu/RoboSLAM/rpg_svo_pro_open)
-
-## Run Mapping with GPF
-[Mapping](Mapping.md)
+   - [ORB_SLAM3](https://github.com/ivalab/ORB_SLAM3/tree/task_driven_benchmark#)
+   <!-- - [msckf](https://github.gatech.edu/RoboSLAM/msckf_vio) -->
+   - [DSOL](https://github.com/ivalab/dsol/tree/v1.0)
+   <!-- - [svo](https://github.gatech.edu/RoboSLAM/rpg_svo_pro_open) -->
 
 ## Run Real World Test
 [RealWorldTest](RealWorldTest.md)
@@ -72,7 +87,7 @@ Please follow the README of each repo to build the SLAM library.
 
 **!!! Please source ros workspace in each terminal.!!!**
     
-    source catkin_ws/devel/setup.bash
+    source ~/catkin_ws/devel/setup.bash
 
 1. Set map and robot init pose. The map and robot_init_pose are recorded [here](configs/map//README.md).
    1. Set them in the gazebo launch file.
@@ -109,7 +124,7 @@ rviz -d closedloop_viz.rviz
 # the kill_onekey_script.sh to shut it down.
 cd scripts/nodes/tools/
 ```
-[`./kill_onekey_script.sh`](scripts/nodes/tools/kill_onekey_script.sh)
+[`./kill_onekey_script.sh`](scripts/tools/kill_onekey_script.sh)
 
 #### Parameters Tuning
 
@@ -127,8 +142,8 @@ It mainly defines the running parameters, ros topics, env name, slam_methods nam
 
 
 ---
-## Extension
-### Steps to add a new SLAM method
+## Customize to other methods
+#### Steps to add a new SLAM method
 1. Define a new class named `${SLAM_NAME}Node` in [`slam_module.py`](scripts/closedloop_nav_slam/utils/slam_module.py). Here is an example of adding `amcl`:
 
 ```python
@@ -164,9 +179,11 @@ loops: 1 # Define the number of loops in a single trial.
 need_map_to_odom_tf: false # Whether needs an additional map_to_odom_tf publisher node. Most 2D laser methods in ros publish this tf inside their class. Some do not and need this publisher node.
 ```
 
-### Steps to Manually Extract/Define Waypoints From A Known Map.
+#### Steps to Manually Extract/Define Waypoints From A Known Map.
 
-Set the map in launch file [`map.launch`](launch/realworld/map.launch)
+1. Set the map in launch file [`map.launch`](launch/realworld/map.launch)
+
+2. Launch tools to select waypoints.
 ```bash
 # First set the proper map file in the launch file.
 roslaunch closedloop_nav_slam map.launch
@@ -178,23 +195,4 @@ rosrun closedloop_nav_slam waypoints_saver.py
 rviz -d launch/closedloop_viz.rviz
 
 # The waypoints will be saved under `scripts/closedloop_nav_slam/ros/` and can later be moved to `configs/path/`
-```
-
-## Issue Tracking.
-- How to disable odom_to_base tf from kobuki_gazebo?
-```bash
-cd ${YOUR_CATKIN_WS}/src/kobuki_ros/kobuki_desktop/kobuki_gazebo_plugins/src
-
-# Change line 166 of file gazebo_ros_kobuki_updates.cpp
-if (publish_tf_)
-# to
-if (false && publish_tf_)
-
-# Rebuild.
-catkin build -j16
-
-# Run new wheel odometry publisher.
-# It subscribes the gazebo odometry and publishes the disturbed (noise) wheel odometry.
-rosrun closedloop_nav_slam wheel_odometry_publisher.py
-
 ```

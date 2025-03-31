@@ -4,12 +4,14 @@
   <arg name="nav_name" default="teb"/> <!-- teb, gpf -->
   <arg name="goal_reached_thresh" default="0.2"/>
   <arg name="goal_reached_orient_thresh" default="1.58"/>
+  <arg name="use_recovery_behaviors" default="false"/>
 
   <!-- move_base -->
   <group if="$(eval arg('nav_name') == 'teb')">
     <include file="$(find closedloop_nav_slam)/launch/nav/turtlebot_teb_controller.launch">
       <arg name="goal_reached_thresh" value="$(arg goal_reached_thresh)"/>
       <arg name="goal_reached_orient_thresh" value="$(arg goal_reached_orient_thresh)"/>
+      <arg name="use_recovery_behaviors" default="$(arg use_recovery_behaviors)"/>
     </include>
   </group>
  
@@ -17,6 +19,7 @@
     <include file="$(find slam_nav)/launch/nav_controller/turtlebot_switched_gpf_potential_gap_laser_ego_remote_controller.launch">
       <arg name="goal_reached_thresh" value="$(arg goal_reached_thresh)"/>
       <arg name="goal_reached_orient_thresh" value="$(arg goal_reached_orient_thresh)"/>
+      <arg name="use_recovery_behaviors" default="$(arg use_recovery_behaviors)"/>
     </include>
   </group>
  

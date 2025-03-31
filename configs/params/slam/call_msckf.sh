@@ -7,7 +7,8 @@ TRACK_LOG_PATH=$2
 # FEATURE_NUM=$3
 FEATURE_NUM=240
 SLAM_POSE_TOPIC=$4
-LAUNCH_FILE_NAME=msckf_vio_gazebo_lmk${FEATURE_NUM}_mpu6000_nav_slam.launch # msckf_vio_d435i_nav_slam.launch
+# LAUNCH_FILE_NAME=msckf_vio_gazebo_lmk${FEATURE_NUM}_mpu6000_nav_slam.launch # msckf_vio_d435i_nav_slam.launch
+LAUNCH_FILE_NAME=msckf_vio_d435i_nav_slam.launch
 
 # Source ros workspace.
 cd $ROS_WS
